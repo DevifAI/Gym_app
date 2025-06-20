@@ -33,7 +33,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
     if (!handle) return;
 
     UIManager.measure(handle, (x, y, width, height, pageX) => {
-      const center = pageX + width / 2 - indicatorSize / 0.95;
+      const center = pageX + width / 2 - indicatorSize / 2;
       Animated.timing(indicatorPosition, {
         toValue: center,
         duration: 300,
@@ -50,6 +50,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   }, [state.index]);
 
   return (
+    <View style={{ backgroundColor: '#fff'}}>
     <View style={styles.tabBar}>
       <Animated.View
         style={[
@@ -91,6 +92,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         );
       })}
     </View>
+    </View>
   );
 };
 
@@ -119,20 +121,18 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     height: 60,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 50,
-    marginHorizontal: HORIZONTAL_MARGIN,
+    backgroundColor: '#ffff',
+    // borderRadius: 50,
+    // marginHorizontal: HORIZONTAL_MARGIN,
     marginBottom: 30,
-    elevation: 8,
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    shadowColor: '#000',
-    paddingVertical: 10,
-    position: 'absolute',
-    bottom: 0,
-    left: HORIZONTAL_MARGIN,
-    right: HORIZONTAL_MARGIN,
+    // elevation: 8,
+    // shadowOpacity: 0.15,
+    // shadowRadius: 10,
+    // shadowOffset: { width: 0, height: 5 },
+    // shadowColor: '#000',
+    // paddingVertical: 10,
+    // position: 'absolute',
+    
     zIndex: 999,
   },
   circularIndicator: {
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   icon: {
-    width: 24,
-    height: 24,
+    width: 25,
+    height: 25,
     resizeMode: 'contain',
   },
   tabPressable: {

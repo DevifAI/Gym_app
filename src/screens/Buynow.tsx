@@ -42,6 +42,10 @@ const BuyNow = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+          <StatusBar 
+        backgroundColor="#ffff" // Dark green background
+        barStyle="dark-content"  // Light icons/text
+      />
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={styles.container}>
 

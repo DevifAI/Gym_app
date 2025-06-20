@@ -2,64 +2,91 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   SafeAreaView,
   Dimensions,
   StatusBar,
+  Image,
 } from 'react-native';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const { width } = Dimensions.get('window');
 
 type PaymentRouteParams = {
-  item: {
-    name: string;
-    price: number;
-    quantity: number;
-    image: string;
-  };
+  title: string;
+  price: string;
+  duration: string;
+  time: string;
+  bookedSlots: number;
 };
 
 const paymentOptions = [
-  { id: 'gpay', name: 'Google Pay', icon: 'google' },
-  { id: 'phonepe', name: 'PhonePe', icon: 'phone' },
-  { id: 'card', name: 'Debit / Credit card', icon: 'credit-card' },
+  { id: 'gpay', name: 'Google Pay', image: require('../assets/payments/Gpay.png') },
+  { id: 'phonepe', name: 'PhonePe', image: require('../assets/payments/Phpe.png') },
+  { id: 'card', name: 'Debit / Credit Card', image: require('../assets/payments/Card.png') },
 ];
 
+
 const Payment = () => {
+  const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<Record<string, PaymentRouteParams>, string>>();
-  const { item } = route.params;
+  const {
+    title ,
+    price ,
+    duration ,
+    time,
+    bookedSlots,
+  } = route.params;
 
   const [selectedMethod, setSelectedMethod] = useState('gpay');
 
-  const total = item.price * item.quantity;
-  const tax = 22; // Or calculate dynamically
+  const total = parseInt(price || '0');
+  const tax = 22;
   const toPay = total + tax;
+  const totalSlots = 4;
+
+  const renderPeopleIcons = () => {
+    return [...Array(totalSlots)].map((_, index) => (
+      <MaterialIcons
+        key={index}
+        name="person"
+        size={18}
+        color={index < bookedSlots ? '#075E4D' : '#ccc'}
+        style={{ marginRight: 2 }}
+      />
+    ));
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.heading}>PAYMENTS</Text>
 
-          {/* Product Card */}
-          <View style={styles.productCard}>
-            <Image
-              source={{ uri: item.image }}
-              style={styles.productImage}
-            />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.quantity}</Text>
+           <View style={styles.header}>
+                   <TouchableOpacity onPress={() => navigation.goBack()}>
+                     <MaterialIcons name="arrow-back-ios" size={24} />
+                   </TouchableOpacity>
+                   <Text style={styles.headerTitle}>PAYMENT</Text>
+                 </View>
+
+          {/* Summary Card */}
+          <View style={styles.card}>
+            <View style={styles.timeBox}>
+              <Text style={styles.time}>{time}</Text>
+              <Text style={styles.duration}>{duration}</Text>
             </View>
-            <View style={{ marginLeft: 12, flex: 1 }}>
-              <Text style={styles.productName}>{item.name}</Text>
-              <Text style={styles.productPrice}>₹{item.price}</Text>
+
+            <View style={styles.info}>
+              <Text style={styles.name}>{title}</Text>
+              <Text style={styles.price}>₹{price}</Text>
+
             </View>
+            <View style={styles.peopleRow}>{renderPeopleIcons()}</View>
           </View>
 
           {/* Payment Methods */}
@@ -77,12 +104,7 @@ const Payment = () => {
                 {selectedMethod === method.id && <View style={styles.radioDot} />}
               </View>
               <Text style={styles.paymentText}>{method.name}</Text>
-              <MaterialCommunityIcons
-                name={method.icon}
-                size={20}
-                color="#444"
-                style={{ marginLeft: 'auto' }}
-              />
+              <Image source={method.image} style={styles.paymentIcon} />
             </TouchableOpacity>
           ))}
 
@@ -100,6 +122,8 @@ const Payment = () => {
             <Text style={styles.summaryLabelBold}>To Pay:</Text>
             <Text style={styles.summaryValueBold}>₹{toPay}</Text>
           </View>
+
+          {/* Terms */}
           <View style={styles.termsRow}>
             <Text style={styles.linkText}>Terms & Condition</Text>
             <Text style={styles.dot}> | </Text>
@@ -107,81 +131,106 @@ const Payment = () => {
           </View>
         </ScrollView>
 
-        {/* Bottom Button */}
-        <View style={styles.bottomBar}>
-          <Text style={styles.totalButtonText}>₹{toPay}</Text>
-          <TouchableOpacity style={styles.payButton}>
-            <Text style={styles.payButtonText}>PAY NOW</Text>
-            <MaterialCommunityIcons name="arrow-right" size={22} color="#fff" style={{ marginLeft: 8 }} />
-          </TouchableOpacity>
-        </View>
+        {/* Bottom Bar */}
+     <View style={styles.fixedBottom}>
+  <TouchableOpacity
+    style={styles.continueButton}
+    onPress={() => navigation.navigate('PaymentSuccess')}
+  >
+    {/* Left price pill */}
+    <View style={styles.priceContainer}>
+      <Text style={styles.priceText}>₹{toPay}</Text>
+    </View>
+
+    {/* Centered text */}
+    <Text style={styles.continueText}>BUY NOW</Text>
+
+    {/* Right arrow */}
+    <View style={styles.arrowContainer}>
+      <MaterialCommunityIcons name="arrow-top-right" size={22} color="#084c3a" />
+    </View>
+  </TouchableOpacity>
+</View>
+
       </View>
     </SafeAreaView>
   );
 };
 
+
 const styles = StyleSheet.create({
-  safeArea: {
+   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+    paddingTop: 35,
   },
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 16,
-  },
-  productCard: {
+  container: { flex: 1 },
+  content: { paddingHorizontal: 16, paddingBottom: 100 },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
+    gap: 8,
+    marginBottom: 20,
   },
-  productImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 10,
-  },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    left: 55,
-    backgroundColor: 'green',
-    borderRadius: 12,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: '#fff',
+  headerTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    fontSize: 12,
   },
-  productName: {
-    fontSize: 16,
+
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    padding: 12,
+    backgroundColor: '#ffff',
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  timeBox: {
+    backgroundColor: '#E3F5F0',
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    width: width * 0.24,
+  },
+  time: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#075E4D',
+  },
+  duration: {
+    fontSize: 14,
+    color: '#666',
+  },
+  info: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  name: {
+    fontSize: 18,
     fontWeight: '600',
     color: '#000',
   },
-  productPrice: {
-    fontSize: 15,
-    color: '#000',
+  price: {
     marginTop: 4,
-  },
-  label: {
     fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 12,
-    marginTop: 8,
-    color: '#000',
+    color: '#666',
   },
+  peopleRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+
+  label: { fontSize: 16, fontWeight: '500', marginBottom: 12, marginTop: 8, color: '#000' },
+  paymentIcon: {
+  width: 22,
+  height: 22,
+  resizeMode: 'contain',
+  marginLeft: 'auto',
+},
   paymentMethod: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,22 +239,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 10,
+    backgroundColor: '#fff',
   },
   paymentMethodSelected: {
-    borderColor: 'green',
-    backgroundColor: '#e6f7ea',
+    borderWidth:1.5,
+    borderColor: '#075E4D',
+    // backgroundColor: '#E3F5F0',
   },
-  paymentText: {
-    fontSize: 15,
-    marginLeft: 12,
-    color: '#000',
-  },
+  paymentText: { fontSize: 15, marginLeft: 12, color: '#000' },
   radioCircle: {
     height: 20,
     width: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#555',
+    borderColor: '#075E4D',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -213,8 +260,9 @@ const styles = StyleSheet.create({
     height: 10,
     width: 10,
     borderRadius: 5,
-    backgroundColor: 'green',
+    backgroundColor: '#075E4D',
   },
+
   dashedLine: {
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
@@ -222,74 +270,65 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   summaryRow: {
+    paddingHorizontal: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 12,
+
   },
-  summaryLabel: {
-    color: '#555',
-    fontSize: 14,
-  },
-  summaryValue: {
-    color: '#555',
-    fontSize: 14,
-  },
-  summaryLabelBold: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  summaryValueBold: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  termsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  linkText: {
-    fontSize: 12,
-    color: '#555',
-    textDecorationLine: 'underline',
-  },
-  dot: {
-    marginHorizontal: 4,
-    fontSize: 12,
-    color: '#555',
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    width,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopColor: '#ddd',
-    borderTopWidth: 1,
-  },
-  totalButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  payButton: {
-    backgroundColor: 'green',
-    marginLeft: 'auto',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  payButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  summaryLabel: { color: '#555', fontSize: 15 },
+  summaryValue: { color: '#555', fontSize: 15 },
+  summaryLabelBold: { color: '#000', fontWeight: 'bold', fontSize: 18 },
+  summaryValueBold: { color: '#000', fontWeight: 'bold', fontSize: 18 },
+
+  termsRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
+  linkText: { fontSize: 14, color: '#075E4D', textDecorationLine: 'underline' },
+  dot: { marginHorizontal: 4, fontSize: 12, color: '#555' },
+
+fixedBottom: {
+  position: 'absolute',
+  bottom: 20,
+  left: 0,
+  right: 0,
+  backgroundColor: '#fff',
+  paddingHorizontal: 16,
+},
+continueButton: {
+  flexDirection: 'row',
+  backgroundColor: '#075E4D',
+  borderRadius: 30,
+  height: 56,
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+},
+continueText: {
+  color: 'white',
+  fontSize: 16,
+  fontWeight: 'bold',
+  textAlign: 'center',
+},
+priceContainer: {
+  position: 'absolute',
+  left: 16,
+  backgroundColor: 'white',
+  borderRadius: 18,
+  paddingVertical: 6,
+  paddingHorizontal: 12,
+},
+priceText: {
+  color: '#075E4D',
+  fontWeight: 'bold',
+  fontSize:18
+},
+arrowContainer: {
+  position: 'absolute',
+  right: 16,
+  backgroundColor: 'white',
+  borderRadius: 50,
+  padding: 6,
+},
+
 });
 
 export default Payment;

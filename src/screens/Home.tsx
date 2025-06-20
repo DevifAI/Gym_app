@@ -8,6 +8,7 @@ import {
   Dimensions,
   TouchableOpacity,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -54,6 +55,10 @@ const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar 
+  backgroundColor="#ffff" // Dark green background
+  barStyle="dark-content"  // Light icons/text
+/>
       <ScrollView contentContainerStyle={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -182,8 +187,9 @@ const styles = StyleSheet.create({
   servicesContainer: {
     flexDirection: 'row',
     alignItems:'center',
-    justifyContent: 'center', 
+    justifyContent: 'space-between', 
     marginBottom: 20,
+    width: '100%',
   },
   serviceItem: {
      backgroundColor: '#eee',

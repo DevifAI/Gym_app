@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -146,6 +147,10 @@ const Cafe = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+          <StatusBar
+        backgroundColor="#ffff" // Dark green background
+        barStyle="dark-content"  // Light icons/text
+      />
       <FlatList
         ListHeaderComponent={
           <>

@@ -13,6 +13,9 @@ import Onboarding from './screens/Onboarding';
 import MainTabs from './components/MainTabs';
 import BuyNow from './screens/Buynow';
 import Payment from './screens/Payment';
+import SlotBook from './screens/SlotBook';
+import Booking from './screens/Booking';
+import PaymentSuccess from './screens/PaymentSuccess';
 // import HomeScreen from './screens/HomeScreen';
 
 const Stack = createNativeStackNavigator();
@@ -42,6 +45,9 @@ const Routes = () => {
         {/* <Stack.Screen name="Home" component={HomeScreen} /> */}
          <Stack.Screen name="Buynow" component={BuyNow} />
          <Stack.Screen name="Payment" component={Payment} />
+         <Stack.Screen name="SlotBook" component={SlotBook} />
+         <Stack.Screen name="Booking" component={Booking} />
+         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
          <Stack.Screen
           name="MainTabs"
           component={MainTabs}
