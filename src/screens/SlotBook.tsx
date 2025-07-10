@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,53 +8,35 @@ import {
   ScrollView,
   Platform,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useAmenity } from '../hooks/useAmenity';
 
 type RootStackParamList = {
-  SlotBook: { title: string };
+  SlotBook: { title: string; id: string };
 };
-
-type MassageOption = {
-  time: string;
-  duration: string;
-  title: string;
-  price: number;
-  bookedSlots: number; // max is 4
-  description: string;
-};
-
-const massageOptions: MassageOption[] = [
-  {
-    time: '7:00 AM',
-    duration: '30 min',
-    title: 'Thai Massage',
-    price: 999,
-    bookedSlots: 2,
-    description: 'This massage helps reduce tension and promote relaxation...',
-  },
-  {
-    time: '7:00 PM',
-    duration: '30 min',
-    title: 'Ayurvedic Massage',
-    price: 999,
-    bookedSlots: 3,
-    description: 'Ayurvedic massage improves blood circulation and vitality...',
-  },
-];
-
 
 const SlotBook = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, 'SlotBook'>>();
- const Title = route.params.title.toUpperCase();
+  const Title = route.params.title.toUpperCase();
+  const { bookAmenityById, getPackages } = useAmenity();
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [packagesStatus, setPackagesStatus] = useState<boolean>(true);
+  const [loadingPackages, setLoadingPackages] = useState<boolean>(true);
+  const [loadingButton, setLoadingButton] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-GB', {
@@ -71,6 +53,69 @@ const SlotBook = () => {
       minute: '2-digit',
       hour12: true,
     });
+  };
+
+  type AmenityBookingPayload = {
+    sub_category_id: string;
+    booking_date: string;
+    booking_time: string;
+  };
+
+  useEffect(() => {
+  const fetchPackages = async () => {
+    setLoadingPackages(true);
+    const res = await getPackages(route.params.id);
+
+    if (!res.success) {
+      setPackagesStatus(false);
+      setPackages([]);
+      setErrorMessage(res.message || 'Something went wrong'); // 👈 store message
+    } else {
+      setPackagesStatus(true);
+      setPackages(res.data || []);
+    }
+
+    setLoadingPackages(false);
+  };
+    fetchPackages();
+  }, []);
+
+  const handleBookAmenity = async (): Promise<void> => {
+    setLoadingButton(true);
+    const payload: AmenityBookingPayload = {
+      sub_category_id: route.params.id,
+      booking_date: selectedDate.toISOString().split('T')[0],
+      booking_time: formatTime(selectedTime),
+    };
+
+    const res = await bookAmenityById({ payload });
+    setLoadingButton(false);
+
+    if (!res.success) {
+      Alert.alert(res.message || 'Booking failed.');
+      return;
+    }
+
+    const data = res;
+
+    console.log("dataaaaaaaaaaaaa" , data)
+    if (data?.data?.is_available) {
+      if (data?.data?.is_free) {
+        navigation.navigate('PaymentSuccess', {
+          type: 'free',
+          message: res.message,
+          details: data.data?.booking_details,
+        });
+      } else if (data?.data?.is_paid) {
+        navigation.navigate('Payment', {
+          type: 'paid',
+          message: res.message,
+          payload,
+        });
+      }
+    } else {
+      Alert.alert('Selected slot is not available.');
+    }
   };
 
   return (
@@ -109,13 +154,13 @@ const SlotBook = () => {
           <MaterialIcons name="schedule" size={20} color="#075E4D" />
           <Text style={styles.inputText}>Time</Text>
           <Text style={styles.inputValue}>{formatTime(selectedTime)}</Text>
-          <MaterialIcons name="keyboard-arrow-down" size={20} color="#075E4D"/>
+          <MaterialIcons name="keyboard-arrow-down" size={20} color="#075E4D" />
         </TouchableOpacity>
         {showTimePicker && (
           <DateTimePicker
             value={selectedTime}
             mode="time"
-            display='spinner'
+            display="spinner"
             onChange={(_, time) => {
               if (time) setSelectedTime(time);
               setShowTimePicker(false);
@@ -123,42 +168,78 @@ const SlotBook = () => {
           />
         )}
 
-        {/* Massage Options */}
-        {massageOptions.map((item, index) => {
-  const totalSlots = 4;
-  const booked = item.bookedSlots;
-  const available = totalSlots - booked;
+        {/* Packages */}
+{loadingPackages ? (
+  <ActivityIndicator size="large" color="#075E4D" style={{ marginTop: 30 }} />
+) : !packagesStatus ? (
+  <Text style={{ textAlign: 'center', color: '#888', marginTop: 30, fontSize: 16 }}>
+    {errorMessage}
+  </Text>
+) : (
+  packages.map((item, index) => {
+    const isSelected = selectedPackageId === item.package_id;
 
-  return (
-    <TouchableOpacity
-      key={index}
-      onPress={() => navigation.navigate('Booking', { ...item })}
-      activeOpacity={0.8}
-      style={styles.card}
-    >
-      <View style={styles.timeBox}>
-        <Text style={styles.time}>{item.time}</Text>
-        <Text style={styles.duration}>{item.duration}</Text>
+    return (
+      <View
+        key={index}
+        style={[styles.card, isSelected && styles.cardSelected]}
+      >
+        <View style={styles.info}>
+          <Text style={[styles.name, isSelected && styles.nameSelected]}>
+            {item.package_name}
+          </Text>
+          <Text style={[styles.price, isSelected && styles.priceSelected]}>
+            ₹{item.price}
+          </Text>
+          {item.valid_for && (
+            <Text style={[styles.price, { fontSize: 12 }]}>
+              Valid for {item.valid_for} {item.valid_for === '1' ? 'month' : 'months'}
+            </Text>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() =>
+            setSelectedPackageId(isSelected ? null : item.package_id)
+          }
+        >
+          {isSelected ? (
+            <MaterialIcons name="check-circle" size={26} color="#075E4D" />
+          ) : (
+            <MaterialIcons name="add-circle-outline" size={26} color="#666" />
+          )}
+        </TouchableOpacity>
       </View>
-      <View style={styles.info}>
-        <Text style={styles.name}>{item.title}</Text>
-        <Text style={styles.price}>₹{item.price}</Text>
-      </View>
-      <View style={styles.peopleIconRow}>
-        {[...Array(booked)].map((_, i) => (
-          <MaterialIcons key={`b-${i}`} name="person" size={18} color="#075E4D" />
-        ))}
-        {[...Array(available)].map((_, i) => (
-          <MaterialIcons key={`a-${i}`} name="person" size={18} color="#999" />
-        ))}
-      </View>
-    </TouchableOpacity>
-  );
-  })}
+    );
+  })
+)}
+
+
+        {/* Book Button */}
+        <View style={styles.fixedBottom}>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleBookAmenity}
+            disabled={loadingButton}
+          >
+            {loadingButton ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <>
+                <Text style={styles.continueText}>CHECK AVAILABILITY</Text>
+                <View style={styles.arrowContainer}>
+                  <MaterialCommunityIcons name="arrow-top-right" size={22} color="#084c3a" />
+                </View>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
+
 const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
@@ -168,8 +249,9 @@ const styles = StyleSheet.create({
     paddingTop: 35,
   },
   container: {
+    flex: 1,
     paddingHorizontal: 16,
-    paddingBottom: 30,
+    paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
@@ -193,61 +275,93 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inputText: {
-    color:"#001",
+    color: '#001',
     fontWeight: 'bold',
     marginLeft: 10,
     marginRight: 10,
-    fontSize:16,
+    fontSize: 16,
   },
   inputValue: {
     flex: 1,
     color: '#444',
-     fontSize:14,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  timeBox: {
-    backgroundColor: '#E3F5F0',
-    padding: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    width: width * 0.24,
-  },
-  time: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#333',
-  },
-  duration: {
-    fontSize: 12,
-    color: '#666',
-  },
-  info: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  price: {
-    marginTop:4,
     fontSize: 14,
-    color: '#666',
   },
-  peopleIconRow: {
+card: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#F9F9F9',
+  borderRadius: 16,
+  padding: 16,
+  marginBottom: 12,
+  borderWidth: 1,
+  borderColor: '#ddd',
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  justifyContent: 'space-between',
+},
+
+cardSelected: {
+  borderColor: '#075E4D',
+  backgroundColor: '#E6F5F2',
+},
+
+info: {
+  flex: 1,
+},
+
+name: {
+  fontSize: 16,
+  fontWeight: '600',
+  color: '#222',
+},
+
+nameSelected: {
+  color: '#075E4D',
+},
+
+price: {
+  marginTop: 4,
+  fontSize: 14,
+  color: '#666',
+},
+
+priceSelected: {
+  color: '#084C3A',
+},
+
+iconButton: {
+  paddingLeft: 12,
+},
+
+
+  fixedBottom: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+  },
+  continueButton: {
     flexDirection: 'row',
-    gap: 1,
+    backgroundColor: '#075E4D',
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  continueText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  arrowContainer: {
+    backgroundColor: 'white',
+    borderRadius: 50,
+    padding: 6,
+    marginLeft: 12,
   },
 });
 

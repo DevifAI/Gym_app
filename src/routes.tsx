@@ -16,13 +16,15 @@ import Payment from './screens/Payment';
 import SlotBook from './screens/SlotBook';
 import Booking from './screens/Booking';
 import PaymentSuccess from './screens/PaymentSuccess';
+import { useSelector } from 'react-redux';
+import { RootState } from './redux/store';
 // import HomeScreen from './screens/HomeScreen';
 
 const Stack = createNativeStackNavigator();
 
 
 const Routes = () => {
-
+      const {isAuthenticated} = useSelector((state: RootState) => state.auth);
     const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,24 +36,22 @@ const Routes = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Onboarding" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="MainTabs" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={Login} />
          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
          <Stack.Screen name="OtpVerify" component={OtpVerification} />
          <Stack.Screen name="CreateNewPassword" component={CreateNewPassword} />
-        <Stack.Screen name="Done" component={DoneScreen} />
-         <Stack.Screen name="Onboarding" component={Onboarding} />
-        {/* <Stack.Screen name="Home" component={HomeScreen} /> */}
-         <Stack.Screen name="Buynow" component={BuyNow} />
-         <Stack.Screen name="Payment" component={Payment} />
-         <Stack.Screen name="SlotBook" component={SlotBook} />
-         <Stack.Screen name="Booking" component={Booking} />
-         <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
-         <Stack.Screen
-          name="MainTabs"
-          component={MainTabs}
-        />
+
+<Stack.Screen name="MainTabs" component={isAuthenticated ? MainTabs : Login} />
+<Stack.Screen name="Done" component={isAuthenticated ? DoneScreen : Login} />
+<Stack.Screen name="Onboarding" component={isAuthenticated ? Onboarding : Login} />
+<Stack.Screen name="Buynow" component={isAuthenticated ? BuyNow : Login} />
+<Stack.Screen name="Payment" component={isAuthenticated ? Payment : Login} />
+<Stack.Screen name="SlotBook" component={isAuthenticated ? SlotBook : Login} />
+<Stack.Screen name="Booking" component={isAuthenticated ? Booking : Login} />
+<Stack.Screen name="PaymentSuccess" component={isAuthenticated ? PaymentSuccess : Login} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

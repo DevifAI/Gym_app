@@ -11,6 +11,8 @@ import {
   StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
 
 const { width } = Dimensions.get('window');
 
@@ -53,6 +55,8 @@ const HomeScreen = () => {
     },
   ];
 
+      const {userName} = useSelector((state: RootState) => state.auth);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar 
@@ -68,7 +72,7 @@ const HomeScreen = () => {
               style={styles.avatar}
             />
             <View>
-              <Text style={styles.greeting}>HI, RAM KUMAR</Text>
+              <Text style={styles.greeting}>HI, {userName}</Text>
               <Text style={styles.subText}>Aenean vulputate</Text>
             </View>
           </View>
@@ -207,12 +211,12 @@ const styles = StyleSheet.create({
     gap:4,
 
   width:80,
-  height:120
+  height:100
   },
   serviceIcon: {
-    width: 38,
-    height:38,
-    marginBottom: 6,
+    width: 32,
+    height:32,
+    marginBottom: 2,
   },
   labelContainer:{
      flex:1,

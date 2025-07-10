@@ -15,31 +15,35 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Input from '../components/Input';
 import { useNavigation } from '@react-navigation/native';
+import { useLogin } from '../hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [hidePassword, setHidePassword] = useState(true);
- const navigation = useNavigation<any>();
+  const navigation = useNavigation<any>();
+
+   const { loginUser, loading } = useLogin(); 
+
   const validate = () => {
-    const emailRegex = /\S+@\S+\.\S+/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
-      return false;
-    }
-    if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters');
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      Alert.alert('Invalid Phone Number', 'Please enter a valid 10-digit phone number');
       return false;
     }
     return true;
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (validate()) {
-      Alert.alert('Signed In', 'Welcome!');
-      navigation.navigate("MainTabs")
+      const result = await loginUser({ phone, password }); // ✅ call login API
+      if (result.success) {
+        navigation.navigate('MainTabs'); // ✅ navigate only if login succeeds
+      } else {
+        Alert.alert('Login Failed', (result as any).message || 'Invalid credentials');
+      }
     }
   };
 
@@ -49,7 +53,7 @@ const Login = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
     >
-         <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -64,13 +68,20 @@ const Login = () => {
             resizeMode="contain"
           />
 
-          <Input
-            label="Email Address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+         <Input
+  label="Phone Number"
+  value={phone}
+  onChangeText={(text) => {
+    // Allow only digits and max length of 10
+    const cleaned = text.replace(/[^0-9]/g, '');
+    if (cleaned.length <= 10) {
+      setPhone(cleaned);
+    }
+  }}
+  keyboardType="phone-pad"
+  autoCapitalize="none"
+/>
+
 
           <Input
             label="Password"
@@ -88,9 +99,9 @@ const Login = () => {
             }
           />
 
-         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-      <Text style={styles.forgotText}>Forgot Password</Text>
-    </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={styles.forgotText}>Forgot Password</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
             <Text style={styles.signInText}>SIGN IN</Text>
@@ -111,7 +122,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingBottom: 40,
-     backgroundColor: '#fff',
+    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
@@ -135,7 +146,7 @@ const styles = StyleSheet.create({
     height: 160,
     alignSelf: 'center',
     marginBottom: 60,
-    marginTop:20,
+    marginTop: 20,
   },
   forgotText: {
     color: '#007bff',
@@ -147,9 +158,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#084c3a',
     borderRadius: 30,
-    // paddingVertical: 8,
     paddingHorizontal: 20,
-     height: 50,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
