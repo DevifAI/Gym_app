@@ -1,10 +1,23 @@
-import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { View, StyleSheet, StatusBar, Image, Text, TouchableOpacity } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+
+type PaymentSuccessParams = {
+  PaymentSuccess: {
+    message: string;
+  };
+};
 
 const PaymentSuccess = () => {
     const navigation = useNavigation<any>();
+    const route = useRoute<RouteProp<PaymentSuccessParams, 'PaymentSuccess'>>();
+
+  const formatMessage = (message: string): string => {
+  return message.toUpperCase();
+};
+const message = formatMessage(route.params?.message || 'PAYMENT SUCCESS');
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#075E4D" barStyle="light-content" />
@@ -13,7 +26,7 @@ const PaymentSuccess = () => {
         style={styles.image}
         resizeMode="contain"
       />
-      <Text style={styles.title}>PAYMENT SUCCESS</Text>
+      <Text style={styles.title}>{message}</Text>
 
 <View style={styles.fixedBottom}>
        <TouchableOpacity

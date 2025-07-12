@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   SafeAreaView,
   View,
@@ -11,37 +11,41 @@ import {
   Dimensions,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
-type Amenity = {
-  id: number;
-  name: string;
-  icon: ImageSourcePropType;
-};
+import { useAmenity } from '../hooks/useAmenity'; // Adjust path as needed
 
 const screenWidth = Dimensions.get('window').width;
 const itemWidth = screenWidth / 4;
 
+import poolImg from '../assets/images/pool.png';
+import spaImg from '../assets/images/spa.png';
+import massageImg from '../assets/images/massage.png';
+import zumbaImg from '../assets/images/progress.png';
+
+const imageMap: { [key: string]: ImageSourcePropType } = {
+  Pool: poolImg,
+  Spa: spaImg,
+  Massage: massageImg,
+  Zumba: zumbaImg,
+};
+
+const defaultImage = poolImg;
+
+
 const Amenities = () => {
-  const [amenities, setAmenities] = useState<Amenity[]>([]);
-const navigation = useNavigation<any>()
-  useEffect(() => {
-    const data: Amenity[] = [
-      { id: 1, name: 'Pool', icon: require('../assets/images/pool.png') },
-      { id: 2, name: 'Spa', icon: require('../assets/images/spa.png') },
-      { id: 3, name: 'Massage', icon: require('../assets/images/massage.png') },
-      { id: 4, name: 'Zumba', icon: require('../assets/images/progress.png') },
-    ];
-    setAmenities(data);
-  }, []);
+  const navigation = useNavigation<any>();
+  const { amenities, loading, error } = useAmenity();
+
+  const renderAmenityImage = (name: string) => {
+    return imageMap[name] || defaultImage;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-          <StatusBar 
-        backgroundColor="#ffff" // Dark green background
-        barStyle="dark-content"  // Light icons/text
-      />
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>AMENITIES</Text>
@@ -50,35 +54,42 @@ const navigation = useNavigation<any>()
         </TouchableOpacity>
       </View>
 
-      {/* Grid */}
-      <ScrollView contentContainerStyle={styles.gridContainer}>
-        {amenities.map((item) => (
-           <TouchableOpacity
-          key={item.id}
-          style={styles.gridItem}
-         onPress={() => navigation.navigate('SlotBook', { title: item.name })}
-        >
-          <View style={styles.iconCircle}>
-            <Image source={item.icon} style={styles.iconImage} />
-          </View>
-          <Text style={styles.itemLabel}>{item.name}</Text>
-        </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {loading ? (
+        <ActivityIndicator size="large" color="#000" style={{ marginTop: 50 }} />
+      ) : (
+        <ScrollView contentContainerStyle={styles.gridContainer}>
+          {amenities.map((item) => (
+            <TouchableOpacity
+              key={item.sub_category_id}
+              style={styles.gridItem}
+              onPress={() =>
+                navigation.navigate('SlotBook', { title: item.sub_category_name , id: item.sub_category_id })
+              }
+            >
+              <View style={styles.iconCircle}>
+                <Image
+                  source={renderAmenityImage(item.sub_category_name)}
+                  style={styles.iconImage}
+                />
+              </View>
+              <Text style={styles.itemLabel}>{item.sub_category_name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
- safeArea: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-     paddingTop: 35,
+    paddingTop: 35,
   },
   header: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    // paddingVertical: 16,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -87,7 +98,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
   },
-    bellContainer: {
+  bellContainer: {
     backgroundColor: '#eee',
     padding: 10,
     borderRadius: 50,
@@ -95,9 +106,9 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop:12,
+    marginTop: 12,
     paddingVertical: 16,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   gridItem: {
     width: itemWidth,
@@ -123,7 +134,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
     textTransform: 'capitalize',
-    fontWeight:'bold',
+    fontWeight: 'bold',
   },
 });
 
