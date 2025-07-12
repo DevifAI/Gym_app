@@ -3,6 +3,7 @@ import { baseClient } from '../services/api.clients';
 import { APIEndpoints } from '../services/api.endpoints';
 import { useDispatch } from 'react-redux';
 import { login } from '../redux/slices/authSlice';
+import Toast from 'react-native-toast-message';
 
 interface LoginPayload {
   phone: string;
@@ -31,13 +32,36 @@ export const useLogin = () => {
             member,
           })
         );
+
+        Toast.show({
+          type: 'success',
+          text1: 'Login Successful ✅',
+          text2: 'Welcome back!',
+        });
+
         return { success: true };
       } else {
-        setError(response.data?.message || 'Login failed');
+        const errMsg = response.data?.message || 'Login failed';
+        setError(errMsg);
+
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: errMsg,
+        });
+
         return { success: false };
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Something went wrong');
+      const errMsg = err?.response?.data?.message || 'Something went wrong';
+      setError(errMsg);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errMsg,
+      });
+
       return { success: false };
     } finally {
       setLoading(false);
