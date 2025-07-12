@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffff',
     // borderRadius: 50,
     // marginHorizontal: HORIZONTAL_MARGIN,
-    marginBottom: 30,
+    marginBottom: 40,
     // elevation: 8,
     // shadowOpacity: 0.15,
     // shadowRadius: 10,

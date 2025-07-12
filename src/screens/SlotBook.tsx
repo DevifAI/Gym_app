@@ -16,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAmenity } from '../hooks/useAmenity';
+import Toast from 'react-native-toast-message';
 
 type RootStackParamList = {
   SlotBook: { title: string; id: string };
@@ -61,24 +62,29 @@ const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
     booking_time: string;
   };
 
-  useEffect(() => {
-  const fetchPackages = async () => {
-    setLoadingPackages(true);
-    const res = await getPackages(route.params.id);
+  // useEffect(() => {
+  // const fetchPackages = async () => {
+  //   setLoadingPackages(true);
+  //   const res = await getPackages(route.params.id);
 
-    if (!res.success) {
-      setPackagesStatus(false);
-      setPackages([]);
-      setErrorMessage(res.message || 'Something went wrong'); // 👈 store message
-    } else {
-      setPackagesStatus(true);
-      setPackages(res.data || []);
-    }
+  //   if (!res.success) {
+  //     setPackagesStatus(false);
+  //     setPackages([]);
+  //     setErrorMessage(res.message || 'Something went wrong'); // 👈 store message
+  //       Toast.show({
+  //   type: 'error',
+  //   text1: res.message || 'Something went wrong',
+  //     });
+  //   } else {
+  //     setPackagesStatus(true);
+  //     setPackages(res.data || []);
+      
+  //   }
 
-    setLoadingPackages(false);
-  };
-    fetchPackages();
-  }, []);
+  //   setLoadingPackages(false);
+  // };
+  //   fetchPackages();
+  // }, []);
 
   const handleBookAmenity = async (): Promise<void> => {
     setLoadingButton(true);
@@ -92,7 +98,11 @@ const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
     setLoadingButton(false);
 
     if (!res.success) {
-      Alert.alert(res.message || 'Booking failed.');
+      // Alert.alert(res.message || 'Booking failed.'); 
+    Toast.show({
+    type: 'error',
+    text1: res.message || 'Something went wrong',
+      });
       return;
     }
 
@@ -168,8 +178,14 @@ const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
           />
         )}
 
+         <View style={styles.descriptionSection}>
+                  <Text style={styles.detailLabel}>Details:</Text>
+                  <Text style={styles.description}>Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis, fugit. Expedita mollitia velit quasi hic. Ipsam quas laudantium iste voluptatibus quis deleniti quidem modi tenetur, praesentium, iure iusto, temporibus accusantium!
+                  Eos, et. Harum, quam earum, accusamus dolores molestias quos ipsam, perspiciatis aliquid itaque in quas quis mollitia culpa? Temporibus quis, commodi voluptate eaque dolorum alias nihil minus necessitatibus a natus!</Text>
+                </View>
+
         {/* Packages */}
-{loadingPackages ? (
+{/* {loadingPackages ? (
   <ActivityIndicator size="large" color="#075E4D" style={{ marginTop: 30 }} />
 ) : !packagesStatus ? (
   <Text style={{ textAlign: 'center', color: '#888', marginTop: 30, fontSize: 16 }}>
@@ -213,7 +229,7 @@ const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
       </View>
     );
   })
-)}
+)} */}
 
 
         {/* Book Button */}
@@ -227,7 +243,7 @@ const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
               <ActivityIndicator color="white" />
             ) : (
               <>
-                <Text style={styles.continueText}>CHECK AVAILABILITY</Text>
+                <Text style={styles.continueText}>BOOK NOW</Text>
                 <View style={styles.arrowContainer}>
                   <MaterialCommunityIcons name="arrow-top-right" size={22} color="#084c3a" />
                 </View>
@@ -337,31 +353,57 @@ iconButton: {
 },
 
 
-  fixedBottom: {
+ descriptionSection: {
+  padding: 14,
+  borderRadius: 14,
+  // borderTopWidth: 1,
+   backgroundColor: '#f9f9f9',
+  //   borderRadius: 14,
+  //   padding: 10,
+  // borderTopColor: '#ccc', // or any color you prefer
+},
+
+  detailLabel: {
+    fontWeight: 'bold',
+    marginBottom: 6,
+    fontSize: 18,
+  },
+  description: {
+    fontSize: 14,
+    color: '#555',
+  },
+
+ fixedBottom: {
     position: 'absolute',
     bottom: 20,
-    left: 16,
-    right: 16,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    padding: 16,
   },
   continueButton: {
-    flexDirection: 'row',
+   flexDirection: 'row',
     backgroundColor: '#075E4D',
     borderRadius: 30,
+    // paddingVertical: 8,
     paddingHorizontal: 20,
-    height: 50,
+     height: 50,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
   continueText: {
-    color: 'white',
+  color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    letterSpacing: 1,
   },
   arrowContainer: {
     backgroundColor: 'white',
     borderRadius: 50,
     padding: 6,
-    marginLeft: 12,
+    marginLeft: -32,
   },
 });
 

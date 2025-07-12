@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,53 +9,62 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
+import { useBooking } from '../hooks/useBooking';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
-  const activities = [
-    {
-      name: 'Pool',
-      time: '5 Apr 2025 5:00pm',
-      status: 'Confirmed',
-      color: 'green',
-      icon: require('../assets/images/pool.png'),
-    },
-    {
-      name: 'Spa',
-      time: '5 Apr 2025 5:00pm',
-      status: 'Cancelled',
-      color: 'red',
-      icon: require('../assets/images/spa.png'),
-    },
-    {
-      name: 'Massage',
-      time: '23 May 2025 4:00pm',
-      status: 'Pending',
-      color: 'blue',
-      icon: require('../assets/images/massage.png'),
-    },
-     {
-      name: 'Massage',
-      time: '23 May 2025 4:00pm',
-      status: 'Pending',
-      color: 'blue',
-      icon: require('../assets/images/massage.png'),
-    },
-    {
-      name: 'Spa',
-      time: '5 Apr 2025 5:00pm',
-      status: 'Cancelled',
-      color: 'red',
-      icon: require('../assets/images/spa.png'),
-    },
-  ];
-
       const {userName} = useSelector((state: RootState) => state.auth);
+        const {
+    getBookingList,
+    bookingList,
+    loading,
+    error,
+    bookingMessage
+  } = useBooking();
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        await getBookingList();
+      } catch (err) {
+        console.error(err)
+      }
+    };
+    
+    fetchBookings();
+  }, []);
+
+    const renderActivityStatus = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return { text: 'Completed', color: 'green' };
+      case 'cancelled':
+        return { text: 'Cancelled', color: 'red' };
+      case 'upcoming':
+        return { text: 'Upcoming', color: '#3567FF' };
+      default:
+        return { text: status, color: 'gray' };
+    }
+  };
+
+  const getActivityIcon = (subCategory: string) => {
+    switch (subCategory.toLowerCase()) {
+      case 'pool':
+        return require('../assets/images/pool.png');
+      case 'spa':
+        return require('../assets/images/spa.png');
+      case 'massage':
+        return require('../assets/images/massage.png');
+      default:
+        return require('../assets/images/pool.png');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -109,31 +118,75 @@ const HomeScreen = () => {
 
         {/* Upcoming Activity */}
         <View style={styles.activityHeader}>
-          <Text style={styles.activityTitle}>UPCOMING ACTIVITY</Text>
+          <Text style={styles.activityTitle}>RECENT ACTIVITIES</Text>
           <TouchableOpacity>
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         </View>
 
         {/* Activity Cards */}
-        {activities.map((activity, index) => (
-          <View
-            key={index}
-            style={[styles.activityCard, activity.status === 'Confirmed' && { borderColor: 'green', borderWidth: 1 }]}
-          >
-            <View style={styles.activityIconContainer} >
-               <Image source={activity.icon} style={styles.activityIcon} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.activityName}>{activity.name}</Text>
-              <View style={styles.timeRow}>
-                <Icon name="clock-outline" size={16} color="#555" />
-                <Text style={styles.activityTime}>{activity.time}</Text>
-              </View>
-            </View>
-            <Text style={[styles.status, { color: activity.color }]}>{activity.status}</Text>
+         {/* Loading State */}
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#000" />
           </View>
-        ))}
+        )}
+
+        {/* Error State */}
+        {error && (
+          <View style={styles.messageContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && (!bookingList || bookingList.length === 0) && (
+          <View style={styles.messageContainer}>
+            <Text style={styles.messageText}>
+              {bookingMessage || 'No bookings found'}
+            </Text>
+          </View>
+        )}
+
+        {/* Activity Cards */}
+        {!loading && !error && bookingList && bookingList.length > 0 && (
+          <>
+            {/* {bookingMessage && (
+              <Text style={styles.successMessage}>{bookingMessage}</Text>
+            )} */}
+            {bookingList.map((booking: any, index: number) => {
+              const status = renderActivityStatus(booking.booking_status || booking.status);
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.activityCard,
+                    status.color === 'green' && { borderColor: 'green', borderWidth: 1 }
+                  ]}
+                >
+                  <View style={styles.activityIconContainer}>
+                    <Image 
+                      source={getActivityIcon(booking.sub_category_name)} 
+                      style={styles.activityIcon} 
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.activityName}>{booking.sub_category_name}</Text>
+                    <View style={styles.timeRow}>
+                      <Icon name="clock-outline" size={16} color="#555" />
+                      <Text style={styles.activityTime}>
+  {`${booking.booking_date}\n${booking.booking_time}`}
+</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.status, { color: status.color }]}>
+                    {status.text}
+                  </Text>
+                </View>
+              );
+            })}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -288,5 +341,34 @@ const styles = StyleSheet.create({
   status: {
     fontWeight: 'bold',
     fontSize: 14,
+  },
+
+   loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageContainer: {
+    padding: 20,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  messageText: {
+    color: '#666',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  successMessage: {
+    color: 'green',
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
   },
 });
