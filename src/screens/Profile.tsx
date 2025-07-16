@@ -6,49 +6,82 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
+import { useSelector } from 'react-redux';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { RootState } from '../redux/store';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+
+// Define your navigation stack types
+type RootStackParamList = {
+  PaymentHistory: undefined;
+  ViewSubscription: undefined;
+  GymInfo: undefined;
+  ContactUs: undefined;
+  // Add other screens if needed
+};
 
 const ProfileScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { userName, image } = useSelector((state: RootState) => state.auth);
+
+  const avatarUrl = image || 'https://randomuser.me/api/portraits/men/1.jpg';
+  const user = userName || 'Guest User';
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <Image
-          source={{ uri: 'https://via.placeholder.com/100' }} // Replace with actual image
-          style={styles.avatar}
-        />
-        <View style={styles.nameSection}>
-          <Text style={styles.name}>RAM KUMAR</Text>
-          <TouchableOpacity style={styles.profileButton}>
-            <Text style={styles.profileButtonText}>View Profile</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+          <View style={styles.nameSection}>
+            <Text style={styles.name}>{user}</Text>
+          </View>
+        </View>
+
+        {/* Menu Section */}
+        <View style={styles.card}>
+          <MenuItem icon="dumbbell" label="GYM Information" onPress={() => navigation.navigate('GymInfo')} />
+          <MenuItem icon="card-account-details" label="View Subscription" onPress={() => navigation.navigate('ViewSubscription')} />
+          <MenuItem icon="history" label="Payment History" onPress={() => navigation.navigate('PaymentHistory')} />
+          <MenuItem icon="phone" label="Contact Us" onPress={() => navigation.navigate('ContactUs')} />
+
+          {/* Logout */}
+          <TouchableOpacity style={styles.logoutButton} onPress={() => console.log('Logout pressed')}>
+            <Icon name="logout" size={20} color="red" style={{ marginRight: 8 }} />
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Card with Menu Options */}
-      <View style={styles.card}>
-        <MenuItem icon={require('../assets/images/cafe.png')} label="GYM Information" />
-        <MenuItem icon={require('../assets/images/cafe.png')} label="Change Branch" />
-        <MenuItem icon={require('../assets/images/cafe.png')} label="View Subscription" />
-        <MenuItem icon={require('../assets/images/cafe.png')} label="Contact Us" />
-
-        <TouchableOpacity style={styles.logoutButton}>
-          <Text style={styles.logoutText}>⏻ Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-const MenuItem = ({ icon, label }: { icon: any; label: string }) => (
-  <TouchableOpacity style={styles.menuItem}>
-    {/* <Image source={icon} style={styles.menuIcon} /> */}
+type MenuItemProps = {
+  icon: string;
+  label: string;
+  onPress: () => void;
+};
+
+const MenuItem = ({ icon, label, onPress }: MenuItemProps) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+    <Icon name={icon} size={22} color="#075E4D" style={styles.menuIcon} />
     <Text style={styles.menuText}>{label}</Text>
     <Text style={styles.arrow}>›</Text>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: 20,
+  },
   container: {
     padding: 20,
     backgroundColor: '#fff',
@@ -63,6 +96,7 @@ const styles = StyleSheet.create({
     height: 60,
     width: 60,
     borderRadius: 30,
+    backgroundColor: '#eee',
   },
   nameSection: {
     marginLeft: 12,
@@ -71,18 +105,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  profileButton: {
-    backgroundColor: '#1bb184',
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginTop: 5,
-    alignSelf: 'flex-start',
-  },
-  profileButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: '#000',
   },
   card: {
     backgroundColor: '#f5f5f5',
@@ -99,26 +122,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   menuIcon: {
-    height: 24,
-    width: 24,
     marginRight: 16,
   },
   menuText: {
     flex: 1,
     fontSize: 16,
+    color: '#000',
   },
   arrow: {
     fontSize: 20,
     color: '#999',
   },
   logoutButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 30,
   },
   logoutText: {
     color: 'red',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
   },
 });
 

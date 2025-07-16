@@ -1,5 +1,6 @@
 import {configureStore} from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
+import cartReducer from './slices/cartSlice';
 import {persistStore, persistReducer} from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {combineReducers} from 'redux';
@@ -12,6 +13,7 @@ const authPersistConfig = {
 
 const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authReducer), // ✅ apply here only
+  cart: cartReducer,
 });
 
 const persistedReducer = persistReducer(authPersistConfig, rootReducer);

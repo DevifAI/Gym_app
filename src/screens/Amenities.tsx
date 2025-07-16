@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -14,33 +14,49 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useAmenity } from '../hooks/useAmenity'; // Adjust path as needed
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useAmenity } from '../hooks/useAmenity';
+import { useSubscription } from '../hooks/useSubscription';
 
 const screenWidth = Dimensions.get('window').width;
 const itemWidth = screenWidth / 4;
 
+// Replace with actual asset imports
 import poolImg from '../assets/images/pool.png';
 import spaImg from '../assets/images/spa.png';
-import massageImg from '../assets/images/massage.png';
 import zumbaImg from '../assets/images/progress.png';
 
 const imageMap: { [key: string]: ImageSourcePropType } = {
   Pool: poolImg,
   Spa: spaImg,
-  Massage: massageImg,
+  Massage: poolImg,
   Zumba: zumbaImg,
 };
 
 const defaultImage = poolImg;
 
-
 const Amenities = () => {
   const navigation = useNavigation<any>();
-  const { amenities, loading, error } = useAmenity();
+  const route = useRoute();
+  const { amenities, loading: loadingAmenity, error } = useAmenity();
+  const {
+    subscriptions,
+    loading: loadingSubscription,
+    getActiveSubscription,
+  } = useSubscription();
+
+  useEffect(() => {
+    if (route.name === 'Subscription') {
+      getActiveSubscription();
+    }
+  }, [route.name]);
 
   const renderAmenityImage = (name: string) => {
     return imageMap[name] || defaultImage;
   };
+
+  const displayItems =
+    route.name === 'Subscription' ? subscriptions : amenities;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -48,31 +64,50 @@ const Amenities = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>AMENITIES</Text>
-        <TouchableOpacity style={styles.bellContainer}>
-          <Icon name="search" size={24} color="#000" />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back-ios" size={26} color="#000" />
         </TouchableOpacity>
+        <Text style={styles.title}>
+          {route.name === 'Subscription' ? 'SUBSCRIPTION' : 'AMENITIES'}
+        </Text>
       </View>
 
-      {loading ? (
+      {(loadingAmenity || loadingSubscription) ? (
         <ActivityIndicator size="large" color="#000" style={{ marginTop: 50 }} />
       ) : (
         <ScrollView contentContainerStyle={styles.gridContainer}>
-          {amenities.map((item) => (
+          {displayItems.map((item) => (
             <TouchableOpacity
-              key={item.sub_category_id}
-              style={styles.gridItem}
-              onPress={() =>
-                navigation.navigate('SlotBook', { title: item.sub_category_name , id: item.sub_category_id })
+              key={
+                route.name === 'Subscription'
+                  ? item.sub_category_id || item.category_name
+                  : item.sub_category_id
               }
+              style={styles.gridItem}
+              onPress={() => {
+                route.name === 'Subscription'
+                  ? navigation.navigate('SubscriptionList' , {
+                    id: item.sub_category_id,
+                  })
+                  : navigation.navigate('SlotBook', {
+                      title: item.sub_category_name,
+                      id: item.sub_category_id,
+                    });
+              }}
             >
               <View style={styles.iconCircle}>
                 <Image
-                  source={renderAmenityImage(item.sub_category_name)}
+                  source={renderAmenityImage(
+                    route.name === 'Subscription'
+                      ? item.sub_category_name
+                      : item.sub_category_name
+                  )}
                   style={styles.iconImage}
                 />
               </View>
-              <Text style={styles.itemLabel}>{item.sub_category_name}</Text>
+              <Text style={styles.itemLabel}>
+                {item.sub_category_name}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -89,19 +124,14 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
     letterSpacing: 1,
-  },
-  bellContainer: {
-    backgroundColor: '#eee',
-    padding: 10,
-    borderRadius: 50,
   },
   gridContainer: {
     flexDirection: 'row',

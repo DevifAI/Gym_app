@@ -18,6 +18,11 @@ import Booking from './screens/Booking';
 import PaymentSuccess from './screens/PaymentSuccess';
 import { useSelector } from 'react-redux';
 import { RootState } from './redux/store';
+import Subscription from './screens/Subscription';
+import Amenities from './screens/Amenities';
+import CartScreen from './screens/Cart';
+import ActivitiesScreen from './screens/Activities';
+import PaymentHistoryScreen from './screens/PaymentHistory';
 // import HomeScreen from './screens/HomeScreen';
 
 const Stack = createNativeStackNavigator();
@@ -50,7 +55,12 @@ const Routes = () => {
 <Stack.Screen name="Payment" component={isAuthenticated ? Payment : Login} />
 <Stack.Screen name="SlotBook" component={isAuthenticated ? SlotBook : Login} />
 <Stack.Screen name="Booking" component={isAuthenticated ? Booking : Login} />
+<Stack.Screen name="Subscription" component={isAuthenticated ? Amenities : Login} />
+<Stack.Screen name="SubscriptionList" component={isAuthenticated ? Subscription : Login} />
 <Stack.Screen name="PaymentSuccess" component={isAuthenticated ? PaymentSuccess : Login} />
+<Stack.Screen name="Cart" component={isAuthenticated ? CartScreen : Login} />
+<Stack.Screen name="Activities" component={isAuthenticated ? ActivitiesScreen : Login} />
+<Stack.Screen name="PaymentHistory" component={PaymentHistoryScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>

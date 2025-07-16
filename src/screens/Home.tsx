@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,22 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { useBooking } from '../hooks/useBooking';
+import { useNavigation } from '@react-navigation/native';
+import SubscriptionExpiryModal from '../modal/SubscriptionExpiry';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
+  const [expiryModal, setExpiryModal] = useState(false);
+  const navigation = useNavigation<any>();
+
+const services = [
+  { label: 'Product', icon: require('../assets/images/cafe.png'), screen: 'Cafe' },
+  { label: 'Amenities', icon: require('../assets/images/gym.png'), screen: 'Aminities' },
+  { label: 'Progress', icon: require('../assets/images/progress.png'), screen: 'ProgressScreen' },
+  { label: 'Subscription', icon: require('../assets/images/payment.png'), screen: 'Subscription' },
+];
+
       const {userName} = useSelector((state: RootState) => state.auth);
         const {
     getBookingList,
@@ -60,7 +72,7 @@ const HomeScreen = () => {
       case 'spa':
         return require('../assets/images/spa.png');
       case 'massage':
-        return require('../assets/images/massage.png');
+        return require('../assets/images/pool.png');
       default:
         return require('../assets/images/pool.png');
     }
@@ -85,9 +97,9 @@ const HomeScreen = () => {
               <Text style={styles.subText}>Aenean vulputate</Text>
             </View>
           </View>
-          <View style={styles.bellContainer}>
+          {/* <View style={styles.bellContainer}>
             <Icon name="bell-outline" size={20} color="#000" />
-          </View>
+          </View> */}
         </View>
 
         {/* Banner */}
@@ -98,28 +110,27 @@ const HomeScreen = () => {
         />
 
         {/* Services */}
-        <View style={styles.servicesContainer}>
-          {[
-            { label: 'Cafe', icon: require('../assets/images/cafe.png') },
-            { label: 'Amenities', icon: require('../assets/images/gym.png') },
-            { label: 'Progress', icon: require('../assets/images/progress.png') },
-            { label: 'Payment History', icon: require('../assets/images/payment.png') },
-          ].map((service, index) => (
-            <View style={styles.Item}>
-            <TouchableOpacity key={index} style={styles.serviceItem}>
-              <Image source={service.icon} style={styles.serviceIcon} />
-            </TouchableOpacity>
-               <View style={styles.labelContainer}>
-                 <Text style={styles.serviceLabel}>{service.label}</Text>
-                 </View>
-            </View>
-          ))}
-        </View>
+      <View style={styles.servicesContainer}>
+  {services.map((service, index) => (
+    <View key={index} style={styles.Item}>
+      <TouchableOpacity
+        style={styles.serviceItem}
+        onPress={() => navigation.navigate(service.screen)}
+      >
+        <Image source={service.icon} style={styles.serviceIcon} />
+      </TouchableOpacity>
+      <View style={styles.labelContainer}>
+        <Text style={styles.serviceLabel}>{service.label}</Text>
+      </View>
+    </View>
+  ))}
+</View>
+
 
         {/* Upcoming Activity */}
         <View style={styles.activityHeader}>
           <Text style={styles.activityTitle}>RECENT ACTIVITIES</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Activities')}>
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -187,6 +198,19 @@ const HomeScreen = () => {
             })}
           </>
         )}
+
+        <SubscriptionExpiryModal
+  visible={expiryModal}
+  onClose={() => setExpiryModal(false)}
+  onRenew={() => {
+    setExpiryModal(false);
+    navigation.navigate('Subscription');
+  }}
+  subscriptions={[
+    { name: 'Pool :', daysLeft: 3 },
+    { name: 'Massage :', daysLeft: 1 },
+  ]}
+/>
       </ScrollView>
     </SafeAreaView>
   );
