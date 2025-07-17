@@ -58,19 +58,20 @@ const ToastComponent: React.FC<ToastComponentProps> = ({
         </Text>
         {text2 ? <Text style={styles.message}>{text2}</Text> : null}
       </View>
+      
     </Animated.View>
   );
 };
 
 export const toastConfig = {
   success: (props: BaseToastProps) => (
-    <ToastComponent {...props} color="#007AFF" type="success" />
+    <ToastComponent {...props} color="#075E4D" type="success" />
   ),
   error: (props: BaseToastProps) => (
     <ToastComponent {...props} color="#F44336" type="error" />
   ),
   info: (props: BaseToastProps) => (
-    <ToastComponent {...props} color="#2196F3" type="info" />
+    <ToastComponent {...props} color="#f3d421ff" type="info" />
   ),
 };
 

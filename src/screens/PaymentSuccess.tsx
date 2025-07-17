@@ -3,15 +3,17 @@ import { View, StyleSheet, StatusBar, Image, Text, TouchableOpacity } from 'reac
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 
-type PaymentSuccessParams = {
+type RootStackParamList = {
   PaymentSuccess: {
+    type: 'cart' | 'subscription';
     message: string;
+    packageId?: number;
   };
 };
 
 const PaymentSuccess = () => {
     const navigation = useNavigation<any>();
-    const route = useRoute<RouteProp<PaymentSuccessParams, 'PaymentSuccess'>>();
+    const route = useRoute<RouteProp<RootStackParamList, 'PaymentSuccess'>>();
 
   const formatMessage = (message: string): string => {
   return message.toUpperCase();
@@ -59,7 +61,8 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: 'bold',
     marginTop: 20,
-    color:'#ffff'
+    color:'#ffff',
+     textAlign: 'center',
   },
 
     fixedBottom: {

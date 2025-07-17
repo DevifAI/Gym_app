@@ -11,6 +11,7 @@ interface AuthState {
   regNo?: string | null;
   token?: string | null;
   userName?: string | null;
+  image?: string | null
 }
 
 const initialState: AuthState = {
@@ -24,6 +25,7 @@ const initialState: AuthState = {
   regNo: null,
   token: null,
   userName: null,
+  image:null,
 };
 
 const authSlice = createSlice({
@@ -43,6 +45,7 @@ const authSlice = createSlice({
           created_at: string;
           reg_key: string;
           reg_no: string;
+          image:  string | null;
         };
       }>
     ) {
@@ -57,6 +60,7 @@ const authSlice = createSlice({
       state.createdAt = member.created_at;
       state.regKey = member.reg_key;
       state.regNo = member.reg_no;
+      state.image = member.image;
     },
 
     logout(state) {
@@ -70,6 +74,7 @@ const authSlice = createSlice({
       state.createdAt = null;
       state.regKey = null;
       state.regNo = null;
+      state.image = null
     },
   },
 });

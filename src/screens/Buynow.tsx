@@ -14,10 +14,14 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../redux/slices/cartSlice';
+import Toast from 'react-native-toast-message';
 
 type BuyNowRouteProp = RouteProp<Record<string, BuyNowParams>, string>;
 
 type BuyNowParams = {
+  id: string;
   image: ImageSourcePropType;
   name: string;
   price: number;
@@ -28,29 +32,40 @@ type BuyNowParams = {
 
 const BuyNow = () => {
   const route = useRoute<BuyNowRouteProp>();
-  const { image, name, price, rating, ingredients, volume } = route.params;
+  const { id, image, name, price, rating, ingredients, volume } = route.params;
   const navigation = useNavigation<any>();
   const [quantity, setQuantity] = useState(1);
 
   const increaseQty = () => setQuantity(prev => prev + 1);
   const decreaseQty = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+
+  const dispatch = useDispatch();
+
   const handleContinue = () => {
-    // your action here
-    navigation.navigate('Payment')
-    console.log('Buy Now clicked!');
+    dispatch(
+      addToCart({
+        id: name, // You can use a unique product ID if available
+        name,
+        price,
+        quantity,
+        image,
+      })
+    );
+
+    Toast.show({
+      type: 'success',
+      text1: 'Added to Cart',
+      text2: `${name} has been added to your cart`,
+      position: 'bottom',
+    });
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-          <StatusBar 
-        backgroundColor="#ffff" // Dark green background
-        barStyle="dark-content"  // Light icons/text
-      />
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       <View style={styles.container}>
-
         {/* Scrollable Content */}
-        <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 120 }}>
+        <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 140 }}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 8 }}>
@@ -59,6 +74,12 @@ const BuyNow = () => {
             <View style={styles.header2}>
               <Text style={styles.title}>BUY NOW</Text>
             </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Cart')}
+              style={{ marginLeft: 'auto', marginTop: 8 }}
+            >
+              <MaterialCommunityIcons name="cart-outline" size={26} color="#000" />
+            </TouchableOpacity>
           </View>
 
           {/* Product Section */}
@@ -74,7 +95,7 @@ const BuyNow = () => {
 
               <View style={styles.productDetails}>
                 <Text style={styles.productName}>{name}</Text>
-                <Text style={styles.productPrice}>₹{price}</Text>
+             <Text style={styles.productPrice}>₹{price * quantity}</Text>
 
                 <View style={styles.quantityContainer}>
                   <TouchableOpacity onPress={decreaseQty} style={styles.quantityButton}>
@@ -108,10 +129,10 @@ const BuyNow = () => {
           </View>
         </ScrollView>
 
-        {/* Fixed Bottom Button */}
+        {/* Fixed Bottom Area */}
         <View style={styles.fixedBottom}>
           <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-            <Text style={styles.continueText}>BUY NOW</Text>
+            <Text style={styles.continueText}>ADD TO CART</Text>
             <View style={styles.arrowContainer}>
               <MaterialCommunityIcons name="arrow-top-right" size={22} color="#084c3a" />
             </View>
@@ -126,7 +147,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-     paddingTop: 35,
+    paddingTop: 35,
   },
   container: {
     flex: 1,
@@ -215,7 +236,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#075E4D',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#fff'
   },
   quantityText: {
     fontSize: 16,
@@ -270,22 +290,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 16,
   },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 12,
+    textAlign: 'right',
+  },
   continueButton: {
-   flexDirection: 'row',
+    flexDirection: 'row',
     backgroundColor: '#075E4D',
     borderRadius: 30,
-    // paddingVertical: 8,
     paddingHorizontal: 20,
-     height: 50,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   continueText: {
-     color: 'white',
+    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   arrowContainer: {
     backgroundColor: 'white',

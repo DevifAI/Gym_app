@@ -116,37 +116,6 @@ const bookAmenityById = async ({
   }
 };
 
-
-
-  // ✅ Fetch packages by sub_category_id
-  const getPackages = async (sub_category_id: string) => {
-    try {
-      const response = await baseClient.get(APIEndpoints.getPackages, {
-        params: { sub_category_id },
-      });
-
-      if (response.data?.status === true) {
-        return {
-          success: true,
-          data: response.data.data,
-          message: response.data.message,
-        };
-      } else {
-        return {
-          success: false,
-          data: [],
-          message: response.data.message || 'Failed to fetch packages',
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        data: [],
-        message: error?.response?.data?.message || 'Something went wrong',
-      };
-    }
-  };
-
   // fetch amenities on mount
   useEffect(() => {
     getActiveAmenity();
@@ -159,6 +128,5 @@ const bookAmenityById = async ({
     amenityMessage,
     bookAmenityById,
     refetch: getActiveAmenity,
-    getPackages, // <-- exposed from within the hook
   };
 };

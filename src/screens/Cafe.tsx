@@ -9,9 +9,11 @@ import {
   Dimensions,
   SafeAreaView,
   StatusBar,
+  TextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const filters = ['Protein Shakes', 'Snacks', 'Detox & Hydrate', 'Dry Fruits'];
 
@@ -19,6 +21,7 @@ const products = [
   {
     id: '1',
     name: 'Whey Concentrate',
+    category: 'Protein Shakes',
     price: 499,
     rating: 4.9,
     image: require('../assets/images/cafeItem1.png'),
@@ -31,6 +34,7 @@ const products = [
   {
     id: '2',
     name: 'Protein Focused',
+    category: 'Protein Shakes',
     price: 499,
     rating: 4.9,
     image: require('../assets/images/cafeItem2.png'),
@@ -42,62 +46,38 @@ const products = [
   },
   {
     id: '3',
-    name: 'Muscle Builder',
-    price: 599,
-    rating: 4.8,
+    name: 'Almond Cookies',
+    category: 'Snacks',
+    price: 199,
+    rating: 4.5,
     image: require('../assets/images/cafeItem2.png'),
-    volume: '300ml',
+    volume: '100g',
     ingredients: [
-      { name: 'Banana', value: '1 piece' },
-      { name: 'Peanut Butter', value: '2 tbsp' },
+      { name: 'Almond', value: '15g' },
     ],
   },
   {
     id: '4',
-    name: 'Super Shake',
-    price: 549,
+    name: 'Detox Water',
+    category: 'Detox & Hydrate',
+    price: 149,
     rating: 4.7,
     image: require('../assets/images/cafeItem1.png'),
-    volume: '180ml',
+    volume: '500ml',
     ingredients: [
-      { name: 'Whey', value: '20g' },
-      { name: 'Cocoa', value: '1 tbsp' },
+      { name: 'Lemon', value: '1 slice' },
     ],
   },
   {
     id: '5',
-    name: 'Recovery Shake',
-    price: 579,
-    rating: 4.6,
-    image: require('../assets/images/cafeItem1.png'),
-    volume: '220ml',
-    ingredients: [
-      { name: 'Carbs', value: '35g' },
-      { name: 'Electrolytes', value: '100mg' },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Vegan Protein',
-    price: 499,
-    rating: 4.5,
+    name: 'Cashew Pack',
+    category: 'Dry Fruits',
+    price: 299,
+    rating: 4.4,
     image: require('../assets/images/cafeItem2.png'),
-    volume: '200ml',
+    volume: '150g',
     ingredients: [
-      { name: 'Pea Protein', value: '20g' },
-      { name: 'Almond Milk', value: '200ml' },
-    ],
-  },
-   {
-    id: '7',
-    name: 'Vegan Protein',
-    price: 499,
-    rating: 4.5,
-    image: require('../assets/images/cafeItem2.png'),
-    volume: '200ml',
-    ingredients: [
-      { name: 'Pea Protein', value: '20g' },
-      { name: 'Almond Milk', value: '200ml' },
+      { name: 'Cashew', value: '100g' },
     ],
   },
 ];
@@ -107,11 +87,18 @@ const CARD_WIDTH = (width - 48) / 2;
 
 const Cafe = () => {
   const navigation = useNavigation<any>();
-  const [activeFilter, setActiveFilter] = useState('Protein Shakes');
+  const [activeFilter, setActiveFilter] = useState('');
+  const [searchText, setSearchText] = useState('');
+
+  const filteredProducts = products.filter((item) => {
+    const nameMatch = item.name.toLowerCase().includes(searchText.toLowerCase());
+    const categoryMatch = activeFilter === '' || item.category === activeFilter;
+    return nameMatch && categoryMatch;
+  });
 
   const renderFilter = ({ item }: { item: string }) => (
     <TouchableOpacity
-      onPress={() => setActiveFilter(item)}
+      onPress={() => setActiveFilter(item === activeFilter ? '' : item)}
       style={[
         styles.filterBtn,
         activeFilter === item && styles.activeFilterBtn,
@@ -131,7 +118,17 @@ const Cafe = () => {
   const renderProduct = ({ item }: any) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('Buynow', { ...item })}
+      onPress={() =>
+        navigation.navigate('Buynow', {
+          id: item.id,
+          image: item.image,
+          name: item.name,
+          price: item.price,
+          rating: item.rating,
+          volume: item.volume,
+          ingredients: item.ingredients,
+        })
+      }
     >
       <View style={styles.imageContainer}>
         <Image source={item.image} style={styles.image} />
@@ -147,36 +144,41 @@ const Cafe = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-          <StatusBar
-        backgroundColor="#ffff" // Dark green background
-        barStyle="dark-content"  // Light icons/text
-      />
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       <FlatList
         ListHeaderComponent={
           <>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>CAFE</Text>
-              <View style={styles.bellContainer}>
-                <Icon name="search" size={24} />
+            <View style={styles.topBar}>
+                {/* <Text style={}>BUY NOW</Text> */}
+              <View style={styles.searchBar}>
+                <Icon name="search" size={20} color="#888" style={{ marginRight: 8 }} />
+                <TextInput
+                  placeholder="Search products"
+                  placeholderTextColor="#aaa"
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  style={styles.searchInput}
+                />
               </View>
+            <TouchableOpacity
+                          onPress={() => navigation.navigate('Cart')}
+                          style={{ marginLeft: 'auto', marginTop: 8 }}
+                        >
+                          <MaterialCommunityIcons name="cart-outline" size={26} color="#000" />
+                        </TouchableOpacity>
             </View>
 
-            {/* Filter */}
-            <View style={{ marginHorizontal: -16 }}>
-              <FlatList
-                data={filters}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                renderItem={renderFilter}
-                keyExtractor={(item) => item}
-                contentContainerStyle={{ paddingHorizontal: 16 }}
-                style={styles.filterList}
-              />
-            </View>
+            <FlatList
+              data={filters}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              renderItem={renderFilter}
+              keyExtractor={(item) => item}
+              contentContainerStyle={styles.filterList}
+            />
           </>
         }
-        data={products}
+        data={filteredProducts}
         keyExtractor={(item) => item.id}
         renderItem={renderProduct}
         numColumns={2}
@@ -187,7 +189,7 @@ const Cafe = () => {
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 8,
-          paddingBottom: 100,
+          paddingBottom: 120,
         }}
         showsVerticalScrollIndicator={false}
       />
@@ -199,43 +201,64 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 20,
+    paddingTop: 35,
   },
-  header: {
-    paddingHorizontal: 10,
-    paddingBottom: 12,
+  topBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    gap: 12,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f1f1',
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    height: 46,
+    flex: 1,
+    elevation: 2,
   },
-  bellContainer: {
-    backgroundColor: '#eee',
-    padding: 10,
-    borderRadius: 50,
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#333',
+  },
+  cartIcon: {
+    padding: 8,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 46,
+    width: 46,
+    elevation: 2,
   },
   filterList: {
-    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   filterBtn: {
     borderWidth: 1,
     borderColor: '#ccc',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 30,
+    backgroundColor: '#fff',
     marginRight: 10,
+    height: 42,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 1,
   },
   activeFilterBtn: {
     backgroundColor: '#075E4D',
     borderColor: '#075E4D',
   },
   filterText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: '#555',
   },
   activeFilterText: {
     color: '#fff',
