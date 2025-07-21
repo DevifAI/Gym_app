@@ -10,7 +10,14 @@ interface LoginPayload {
   password: string;
 }
 
-export const useLogin = () => {
+interface RegisterPayload {
+  name: string;
+  phone: string;
+  email: string;
+  dob: string;
+}
+
+export const useAuth = () => {
   const dispatch = useDispatch();
 
   const [loading, setLoading] = useState(false);
@@ -68,8 +75,52 @@ export const useLogin = () => {
     }
   };
 
+  const registerUser = async (data: RegisterPayload) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await baseClient.post(APIEndpoints.register, data);
+
+      if (response.data?.status === true) {
+        Toast.show({
+          type: 'success',
+          text1: 'Registration Successful',
+          text2: response.data?.message || 'Welcome aboard!',
+        });
+
+        return { success: true };
+      } else {
+        const errMsg = response.data?.message || 'Registration failed';
+        setError(errMsg);
+
+        Toast.show({
+          type: 'error',
+          text1: 'Registration Failed',
+          text2: errMsg,
+        });
+
+        return { success: false };
+      }
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || 'Something went wrong';
+      setError(errMsg);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errMsg,
+      });
+
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loginUser,
+    registerUser,
     loading,
     error,
   };

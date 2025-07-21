@@ -10,89 +10,36 @@ import {
   SafeAreaView,
   StatusBar,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation } from '@react-navigation/native';
+import { useProduct } from '../hooks/useProduct'; // Ensure the path is correct
+import { selectCartItems } from '../redux/slices/cartSlice';
+import { useSelector } from 'react-redux';
+// Example: using cart context/hook (adjust this to your setup)
 
-const filters = ['Protein Shakes', 'Snacks', 'Detox & Hydrate', 'Dry Fruits'];
-
-const products = [
-  {
-    id: '1',
-    name: 'Whey Concentrate',
-    category: 'Protein Shakes',
-    price: 499,
-    rating: 4.9,
-    image: require('../assets/images/cafeItem1.png'),
-    volume: '200ml',
-    ingredients: [
-      { name: 'Protein', value: '25g' },
-      { name: 'Milk', value: '200ml' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Protein Focused',
-    category: 'Protein Shakes',
-    price: 499,
-    rating: 4.9,
-    image: require('../assets/images/cafeItem2.png'),
-    volume: '250ml',
-    ingredients: [
-      { name: 'Almonds', value: '10g' },
-      { name: 'Honey', value: '1 tsp' },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Almond Cookies',
-    category: 'Snacks',
-    price: 199,
-    rating: 4.5,
-    image: require('../assets/images/cafeItem2.png'),
-    volume: '100g',
-    ingredients: [
-      { name: 'Almond', value: '15g' },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Detox Water',
-    category: 'Detox & Hydrate',
-    price: 149,
-    rating: 4.7,
-    image: require('../assets/images/cafeItem1.png'),
-    volume: '500ml',
-    ingredients: [
-      { name: 'Lemon', value: '1 slice' },
-    ],
-  },
-  {
-    id: '5',
-    name: 'Cashew Pack',
-    category: 'Dry Fruits',
-    price: 299,
-    rating: 4.4,
-    image: require('../assets/images/cafeItem2.png'),
-    volume: '150g',
-    ingredients: [
-      { name: 'Cashew', value: '100g' },
-    ],
-  },
-];
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 const Cafe = () => {
   const navigation = useNavigation<any>();
+  const { products, loading, error, message } = useProduct();
+
   const [activeFilter, setActiveFilter] = useState('');
   const [searchText, setSearchText] = useState('');
+   const cartItems = useSelector(selectCartItems);
+
+  // ✅ Dynamic filters based on sub_category_name
+  const filters = Array.from(
+    new Set(products.map((item) => item.sub_category_name).filter(Boolean))
+  );
 
   const filteredProducts = products.filter((item) => {
-    const nameMatch = item.name.toLowerCase().includes(searchText.toLowerCase());
-    const categoryMatch = activeFilter === '' || item.category === activeFilter;
+    const nameMatch = item.package_name.toLowerCase().includes(searchText.toLowerCase());
+    const categoryMatch = activeFilter === '' || item.sub_category_name === activeFilter;
     return nameMatch && categoryMatch;
   });
 
@@ -120,27 +67,51 @@ const Cafe = () => {
       style={styles.card}
       onPress={() =>
         navigation.navigate('Buynow', {
-          id: item.id,
-          image: item.image,
-          name: item.name,
-          price: item.price,
-          rating: item.rating,
-          volume: item.volume,
-          ingredients: item.ingredients,
+          product: item,
         })
       }
     >
       <View style={styles.imageContainer}>
-        <Image source={item.image} style={styles.image} />
-        <View style={styles.rating}>
-          <Icon name="star" size={12} color="#fff" />
-          <Text style={styles.ratingText}>{item.rating}</Text>
+        <Image
+          source={
+            item.image
+              ? { uri: `https://${item.image}` }
+              : require('../assets/images/dummyProduct.png')
+          }
+          style={styles.image}
+        />
+        {item.rating && (
+          <View style={styles.rating}>
+            <Icon name="star" size={12} color="#fff" />
+            <Text style={styles.ratingText}>{item.rating}</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.cardContent}>
+        <Text style={styles.productTitle}>{item.package_name}</Text>
+        <View style={styles.bottomRow}>
+          <Text style={styles.productPrice}>₹{item.price}</Text>
         </View>
       </View>
-      <Text style={styles.productTitle}>{item.name}</Text>
-      <Text style={styles.productPrice}>₹{item.price}</Text>
     </TouchableOpacity>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#075E4D" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.loaderContainer}>
+        <Text>{error}</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -149,7 +120,6 @@ const Cafe = () => {
         ListHeaderComponent={
           <>
             <View style={styles.topBar}>
-                {/* <Text style={}>BUY NOW</Text> */}
               <View style={styles.searchBar}>
                 <Icon name="search" size={20} color="#888" style={{ marginRight: 8 }} />
                 <TextInput
@@ -160,12 +130,21 @@ const Cafe = () => {
                   style={styles.searchInput}
                 />
               </View>
-            <TouchableOpacity
-                          onPress={() => navigation.navigate('Cart')}
-                          style={{ marginLeft: 'auto', marginTop: 8 }}
-                        >
-                          <MaterialCommunityIcons name="cart-outline" size={26} color="#000" />
-                        </TouchableOpacity>
+              <TouchableOpacity
+  onPress={() => navigation.navigate('Cart')}
+  style={{ marginLeft: 'auto', marginTop: 8 }}
+>
+  <View>
+    <MaterialCommunityIcons name="cart-outline" size={26} color="#000" />
+    
+    {cartItems.length > 0 && (
+      <View style={styles.cartBadge}>
+        <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+      </View>
+    )}
+  </View>
+</TouchableOpacity>
+
             </View>
 
             <FlatList
@@ -176,10 +155,16 @@ const Cafe = () => {
               keyExtractor={(item) => item}
               contentContainerStyle={styles.filterList}
             />
+
+            {filteredProducts.length < 0 && message ? (
+              <View style={styles.messageContainer}>
+                <Text style={styles.messageText}>{message}</Text>
+              </View>
+            ) : null}
           </>
         }
         data={filteredProducts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.package_id}
         renderItem={renderProduct}
         numColumns={2}
         columnWrapperStyle={{
@@ -203,6 +188,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 35,
   },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -224,16 +214,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#333',
-  },
-  cartIcon: {
-    padding: 8,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 46,
-    width: 46,
-    elevation: 2,
   },
   filterList: {
     paddingHorizontal: 12,
@@ -266,11 +246,12 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    height: CARD_WIDTH * 1.3,
+    height: CARD_WIDTH * 1.35,
     borderRadius: 12,
     borderColor: '#075E4D',
     borderWidth: 1,
     overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   imageContainer: {
     alignItems: 'center',
@@ -299,19 +280,56 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 4,
   },
-  productTitle: {
-    fontSize: 16,
-    marginTop: 4,
+  cardContent: {
+    flex: 1,
+    justifyContent: 'space-between',
     paddingHorizontal: 8,
-    marginLeft: 6,
+    paddingBottom: 8,
+  },
+  productTitle: {
+    fontSize: 14,
+    marginTop: 4,
+    color: '#333',
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   productPrice: {
     fontSize: 16,
-    paddingHorizontal: 8,
-    marginBottom: 8,
     fontWeight: '600',
-    marginLeft: 6,
+    color: '#075E4D',
   },
+  messageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  messageText: {
+    color: '#075E4D',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  cartBadge: {
+  position: 'absolute',
+  right: -6,
+  top: -5,
+  backgroundColor: '#075E4D',
+  borderRadius: 10,
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  justifyContent: 'center',
+  alignItems: 'center',
+  minWidth: 18,
+},
+cartBadgeText: {
+  color: 'white',
+  fontSize: 10,
+  fontWeight: 'bold',
+  textAlign: 'center',
+},
+
 });
 
 export default Cafe;

@@ -1,5 +1,9 @@
 import RazorpayCheckout from 'react-native-razorpay';
 import { Alert } from 'react-native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
+import { baseClient } from '../services/api.clients';
+import { APIEndpoints } from '../services/api.endpoints';
 
 type User = {
   name: string;
@@ -68,6 +72,9 @@ type PayOptions = {
 };
 
 export const usePayment = () => {
+
+    const {userId } = useSelector((state: RootState) => state.auth);
+
   const pay = ({ amount, user, onSuccess, onFailure }: PayOptions) => {
     const options: RazorpayOptions = {
       description: 'Order Payment',
@@ -98,13 +105,30 @@ export const usePayment = () => {
     RazorpayCheckout.open(options)
       .then((data: RazorpaySuccessData) => {
         onSuccess?.(data);
-        Alert.alert('Success', `Payment ID: ${data.razorpay_payment_id}`);
+        console.log('Success', `Payment ID: ${data.razorpay_payment_id}`);
       })
       .catch((error: RazorpayErrorData) => {
         onFailure?.(error);
-        Alert.alert('Payment Failed', `${error.code}: ${error.description}`);
+         console.log('Payment Failed', `${error.code}: ${error.description}`);
       });
   };
 
-  return { pay };
+  const getPaymentHistory = async() =>{
+    const payload = {
+      member_id : userId,
+    }
+
+  try {
+    const response = await baseClient.post(APIEndpoints.paymentHistory, payload);
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching payment history:', error);
+    return {
+      success: false,
+      data: [],
+      message: error?.message || 'Failed to fetch payment history',
+    };
+  }
+  }
+  return { pay , getPaymentHistory };
 };

@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useRef, useState } from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,99 +12,145 @@ import {
   ScrollView,
   Platform,
   StatusBar,
-  Alert,
+  SafeAreaView,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
 const OtpVerification = () => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '']);
   const inputs = useRef<TextInput[]>([]);
-   const navigation = useNavigation<any>();
+  const [resendTimer, setResendTimer] = useState(60);
+
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const email = route.params?.email || 'yourmail@gmail.com';
+const phone = route.params?.phone || 'yourmail@gmail.com';
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [resendTimer]);
+
   const handleChange = (text: string, index: number) => {
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
 
-    // Move to next input
-    if (text && index < 5) {
-      inputs.current[index + 1].focus();
+    if (text && index < 3) {
+      inputs.current[index + 1]?.focus();
     }
   };
 
   const handleBackspace = (key: string, index: number) => {
     if (key === 'Backspace' && index > 0 && otp[index] === '') {
-      inputs.current[index - 1].focus();
+      inputs.current[index - 1]?.focus();
     }
   };
+
   const handleContinue = () => {
-  const isOtpComplete = otp.every((digit) => digit !== '');
+    const isOtpComplete = otp.every((digit) => digit !== '');
 
-  if (!isOtpComplete) {
-    Alert.alert('Please enter the complete 6-digit OTP');
-    return;
-  }
+    if (!isOtpComplete) {
+      Toast.show({
+        type: 'error',
+        text1: 'Enter complete 4-digit OTP',
+      });
+      return;
+    }
 
-  // You can validate OTP from API here
+    Toast.show({
+      type: 'success',
+      text1: 'OTP Verified',
+    });
 
-  navigation.navigate('CreateNewPassword');
-};
+    navigation.navigate('Login');
+  };
 
+  const handleResend = () => {
+    if (resendTimer === 0) {
+      // Replace with actual resend OTP API call here
+      Toast.show({
+        type: 'success',
+        text1: `OTP resent to ${phone}`,
+      });
+
+      setResendTimer(60); // Reset timer
+    }
+  };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
-    >
-      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.container}>
- <View style={styles.header}>
-         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 8 }}>
-         <Icon name="arrow-back-ios" size={26} color="#000" />
-   </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+      >
+        <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 8 }}>
+                <Icon name="arrow-back-ios" size={26} color="#000" />
+              </TouchableOpacity>
 
-        <View style={styles.header2}>
-          <Text style={styles.title}>OTP VERIFICATION</Text>
-          <Text style={styles.subtitle}>
-            We’ve sent a 6-digit code to{'\n'}yourmail@gmail.com
-          </Text>
-
-    </View>
-        </View>
-          <Image
-            source={require('../assets/images/otpVerify.png')} 
-            style={styles.image}
-            resizeMode="contain"
-          />
-
-          <View style={styles.otpContainer}>
-            {otp.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(ref) => (inputs.current[index] = ref!)}
-                style={styles.otpBox}
-                keyboardType="number-pad"
-                maxLength={1}
-                value={digit}
-                onChangeText={(text) => handleChange(text, index)}
-                onKeyPress={({ nativeEvent }) => handleBackspace(nativeEvent.key, index)}
-              />
-            ))}
-          </View>
-
-          <TouchableOpacity style={styles.continueButton}  onPress={handleContinue}>
-            <Text style={styles.continueText}>CONTINUE</Text>
-            <View style={styles.arrowContainer}>
-              <MaterialCommunityIcons name="arrow-top-right" size={20} color="#084c3a" />
+              <View style={styles.header2}>
+                <Text style={styles.title}>OTP VERIFICATION</Text>
+                <Text style={styles.subtitle}>
+                  We’ve sent a 4-digit code to{'\n'}
+                  {phone}
+                </Text>
+              </View>
             </View>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+            <Image
+              source={require('../assets/images/otpVerify.png')}
+              style={styles.image}
+              resizeMode="contain"
+            />
+
+            <View style={styles.otpContainer}>
+              {otp.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => (inputs.current[index] = ref!)}
+                  style={styles.otpBox}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  value={digit}
+                  onChangeText={(text) => handleChange(text, index)}
+                  onKeyPress={({ nativeEvent }) => handleBackspace(nativeEvent.key, index)}
+                />
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+              <Text style={styles.continueText}>CONTINUE</Text>
+              <View style={styles.arrowContainer}>
+                <MaterialCommunityIcons name="arrow-top-right" size={20} color="#084c3a" />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.resendContainer}>
+              {resendTimer > 0 ? (
+                <Text style={styles.timerText}>Resend OTP in {resendTimer}s</Text>
+              ) : (
+                <TouchableOpacity onPress={handleResend}>
+                  <Text style={styles.resendText}>Resend OTP</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
@@ -123,16 +169,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 40,
   },
-    header:{
- flexDirection: 'row',
-//  justifyContent:'flex-start',
- alignItems:'flex-start',
-gap:8,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
   },
-header2:{
- flexDirection: 'column',
- alignItems:'flex-start',
- justifyContent:'flex-start',
+  header2: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
   },
   title: {
     fontSize: 26,
@@ -159,21 +204,20 @@ header2:{
     paddingHorizontal: 5,
   },
   otpBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     borderWidth: 1,
     borderColor: '#aaa',
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
   },
   continueButton: {
     flexDirection: 'row',
     backgroundColor: '#084c3a',
     borderRadius: 30,
-    // paddingVertical: 12,
+    height: 50,
     paddingHorizontal: 20,
-    height:50,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -189,5 +233,18 @@ header2:{
     borderRadius: 50,
     padding: 8,
     marginLeft: -32,
+  },
+  resendContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  resendText: {
+    color: '#084c3a',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  timerText: {
+    color: '#999',
+    fontSize: 14,
   },
 });
