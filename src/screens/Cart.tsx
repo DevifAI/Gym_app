@@ -11,7 +11,13 @@ import {
   Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectCartItems, removeFromCart, updateQuantity } from '../redux/slices/cartSlice';
+import {
+  selectCartItems,
+  removeFromCart,
+  updateQuantity,
+  clearCart,
+} from '../redux/slices/cartSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -19,26 +25,27 @@ import { useNavigation } from '@react-navigation/native';
 import { usePayment } from '../hooks/usePayment';
 import { RootState } from '../redux/store';
 import Toast from 'react-native-toast-message';
+import { useProduct } from '../hooks/useProduct';
 
 const CartScreen = () => {
-  const cartItems = useSelector(selectCartItems) as Array<any>;
   const dispatch = useDispatch();
   const navigation = useNavigation<any>();
-    const { pay } = usePayment();
-     const { userName, phone } = useSelector((state: RootState) => state.auth);
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const handleBuyNow = () => {
-    console.log('Proceeding to checkout...');
+  const cartItems = useSelector(selectCartItems);
+
+
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0,
+  );
+
+  const increaseQty = (id: string, qty: number) => {
+    dispatch(updateQuantity({ id, quantity: qty + 1 }));
   };
 
-  const increaseQty = (id: string, currentQty: number) => {
-    dispatch(updateQuantity({ id, quantity: currentQty + 1 }));
-  };
-
-  const decreaseQty = (id: string, currentQty: number) => {
-    if (currentQty > 1) {
-      dispatch(updateQuantity({ id, quantity: currentQty - 1 }));
+  const decreaseQty = (id: string, qty: number) => {
+    if (qty > 1) {
+      dispatch(updateQuantity({ id, quantity: qty - 1 }));
     }
   };
 
@@ -46,46 +53,44 @@ const CartScreen = () => {
     dispatch(removeFromCart(id));
   };
 
- const handlePayment = () => {
+
+const handlePayment = () => {
   if (cartItems.length === 0) {
     Alert.alert('Your cart is empty.');
     return;
   }
 
-  pay({
-    amount: subtotal,
-    user: {
-      name: userName || '',
-      email: 'john@example.com', // Replace with real email
-      phone: phone || '',
-    },
-    onSuccess: (data) => {
-      console.log('Payment Success:', data);
-      navigation.navigate('PaymentSuccess', {
-        type: 'cart',
-        message: 'Order placed successfully',
-      });
-    },
-    onFailure: (error) => {
-      console.log('Payment Failed:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Payment Failed',
-        text2: 'Please try again.',
-      });
-    },
-  });
-};
+  const payload = {
+    date: new Date().toISOString(),
+    totalPrice: subtotal,
+    items: cartItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      total: item.price * item.quantity,
+      subCategoryId: item.subcategory_id,
+      subCategoryName: item.subcategory_name,
+    })),
+  };
 
+  navigation.navigate('Payment', { cartPayload: payload });
+};
 
 
   const renderItem = ({ item }: any) => (
     <View style={styles.card}>
-      <Image source={item.image} style={styles.image} />
+      <Image
+        source={
+          item.image
+            ? { uri: item.image.startsWith('http') ? item.image : `https://${item.image}` }
+            : require('../assets/images/banner.png')
+        }
+        style={styles.image}
+      />
       <View style={styles.details}>
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.price}>₹{item.price} each</Text>
-
         <View style={styles.quantityContainer}>
           <TouchableOpacity onPress={() => decreaseQty(item.id, item.quantity)} style={styles.qtyButton}>
             <Icon name="remove" size={16} color="#fff" />
@@ -96,7 +101,6 @@ const CartScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
-
       <View style={styles.rightSection}>
         <Text style={styles.total}>₹{item.price * item.quantity}</Text>
         <TouchableOpacity onPress={() => handleRemove(item.id)}>
@@ -110,7 +114,6 @@ const CartScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <MaterialIcons name="arrow-back-ios" size={26} color="#000" />
@@ -121,20 +124,20 @@ const CartScreen = () => {
         <FlatList
           data={cartItems}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
           contentContainerStyle={styles.list}
           ListEmptyComponent={<Text style={styles.emptyText}>Your cart is empty.</Text>}
         />
 
         {cartItems.length > 0 && (
           <View style={styles.footer}>
-            <View style={styles.subtotalRow}>
+            {/* <View style={styles.subtotalRow}>
               <Text style={styles.subtotalLabel}>Subtotal</Text>
               <Text style={styles.subtotalValue}>₹{subtotal.toFixed(2)}</Text>
-            </View>
+            </View> */}
 
             <TouchableOpacity style={styles.buyNowButton} onPress={handlePayment}>
-              <Text style={styles.buyNowText}>BUY NOW</Text>
+              <Text style={styles.buyNowText}>CHECKOUT</Text>
               <View style={styles.arrowContainer}>
                 <MaterialCommunityIcons name="arrow-top-right" size={22} color="#084c3a" />
               </View>
@@ -247,7 +250,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 18,
-    marginHorizontal:16
+    marginHorizontal: 16,
   },
   subtotalLabel: {
     fontSize: 16,

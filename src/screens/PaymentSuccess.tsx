@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
 
     fixedBottom: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 40,
     left: 0,
     right: 0,
     backgroundColor: '#075E4D',

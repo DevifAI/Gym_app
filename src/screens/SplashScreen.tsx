@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, StatusBar, Image } from 'react-native';
+import changeNavigationBarColor from 'react-native-navigation-bar-color';
 
 const SplashScreen = () => {
+
+  useEffect(() => {
+  changeNavigationBarColor('#075E4D', true); // true for light buttons/icons
+}, []);
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#075E4D" barStyle="light-content" />

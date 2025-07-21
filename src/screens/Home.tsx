@@ -17,12 +17,17 @@ import { RootState } from '../redux/store';
 import { useBooking } from '../hooks/useBooking';
 import { useNavigation } from '@react-navigation/native';
 import SubscriptionExpiryModal from '../modal/SubscriptionExpiry';
+import changeNavigationBarColor from 'react-native-navigation-bar-color';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = () => {
   const [expiryModal, setExpiryModal] = useState(false);
   const navigation = useNavigation<any>();
+
+    useEffect(() => {
+  changeNavigationBarColor('#ffffff', true); // true for light buttons/icons
+}, []);
 
 const services = [
   { label: 'Product', icon: require('../assets/images/cafe.png'), screen: 'Cafe' },
@@ -48,7 +53,7 @@ const services = [
         console.error(err)
       }
     };
-    
+
     fetchBookings();
   }, []);
 

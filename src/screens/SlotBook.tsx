@@ -26,7 +26,7 @@ const SlotBook = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, 'SlotBook'>>();
   const Title = route.params.title.toUpperCase();
-  const { bookAmenityById, getPackages } = useAmenity();
+  const { bookAmenityById } = useAmenity();
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
@@ -375,7 +375,7 @@ iconButton: {
 
  fixedBottom: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 40,
     left: 0,
     right: 0,
     backgroundColor: '#fff',

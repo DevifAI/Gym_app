@@ -7,56 +7,75 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  ImageSourcePropType,
   StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
-import { addToCart } from '../redux/slices/cartSlice';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToCart, selectCartItems } from '../redux/slices/cartSlice';
 import Toast from 'react-native-toast-message';
 
-type BuyNowRouteProp = RouteProp<Record<string, BuyNowParams>, string>;
+type ProductType = {
+  package_id: string;
+  package_name: string;
+  price: string | number;
+  rating?: number;
+  image?: string;
+  ingredients?: { name: string; value: string }[];
+  volume?: string;
+  sub_category_id: string;
+  sub_category_name: string;
+};
 
-type BuyNowParams = {
-  id: string;
-  image: ImageSourcePropType;
-  name: string;
-  price: number;
-  rating: number;
-  ingredients: { name: string; value: string }[];
-  volume: string;
+type RouteParams = {
+  product: ProductType;
 };
 
 const BuyNow = () => {
-  const route = useRoute<BuyNowRouteProp>();
-  const { id, image, name, price, rating, ingredients, volume } = route.params;
   const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<Record<string, RouteParams>, string>>();
+  const { product } = route.params;
+   const cartItems = useSelector(selectCartItems);
+
+  // Normalize product fields
+  const normalizedProduct = {
+    id: product.package_id,
+    name: product.package_name,
+    price: Number(product.price),
+    rating: product.rating || 0,
+    image: product.image,
+    ingredients: product.ingredients || [],
+    volume: product.volume || '',
+    subcategory_id: product.sub_category_id,
+    subcategory_name: product.sub_category_name,
+  };
+
   const [quantity, setQuantity] = useState(1);
+  const dispatch = useDispatch();
 
   const increaseQty = () => setQuantity(prev => prev + 1);
   const decreaseQty = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
-  const dispatch = useDispatch();
-
   const handleContinue = () => {
-    dispatch(
-      addToCart({
-        id: name, // You can use a unique product ID if available
-        name,
-        price,
-        quantity,
-        image,
-      })
-    );
+  dispatch(
+  addToCart({
+    id: normalizedProduct.id,
+    name: normalizedProduct.name,
+    price: normalizedProduct.price,
+    image: normalizedProduct.image,
+    quantity,
+    subcategory_id: normalizedProduct.subcategory_id,
+    subcategory_name: normalizedProduct.subcategory_name,
+  })
+);
 
     Toast.show({
       type: 'success',
       text1: 'Added to Cart',
-      text2: `${name} has been added to your cart`,
-      position: 'bottom',
+      text2: `${normalizedProduct.name} has been added to your cart`,
+      position: 'top',
     });
   };
 
@@ -64,9 +83,7 @@ const BuyNow = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       <View style={styles.container}>
-        {/* Scrollable Content */}
         <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 140 }}>
-          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 8 }}>
               <MaterialIcons name="arrow-back-ios" size={26} color="#000" />
@@ -75,33 +92,54 @@ const BuyNow = () => {
               <Text style={styles.title}>BUY NOW</Text>
             </View>
             <TouchableOpacity
-              onPress={() => navigation.navigate('Cart')}
-              style={{ marginLeft: 'auto', marginTop: 8 }}
-            >
-              <MaterialCommunityIcons name="cart-outline" size={26} color="#000" />
-            </TouchableOpacity>
+  onPress={() => navigation.navigate('Cart')}
+  style={{ marginLeft: 'auto', marginTop: 8 }}
+>
+  <View>
+    <MaterialCommunityIcons name="cart-outline" size={26} color="#000" />
+    
+    {cartItems.length > 0 && (
+      <View style={styles.cartBadge}>
+        <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+      </View>
+    )}
+  </View>
+</TouchableOpacity>
+
           </View>
 
-          {/* Product Section */}
           <View style={styles.productSection}>
             <View style={styles.productRow}>
               <View style={styles.imageContainer}>
-                <Image source={image} style={styles.productImage} />
-                <View style={styles.ratingBadge}>
-                  <Icon name="star" size={12} color="#fff" />
-                  <Text style={styles.ratingText}>{rating}</Text>
-                </View>
+                <Image
+                  source={
+                    normalizedProduct.image
+                      ? { uri: `https://${normalizedProduct.image}` }
+                      : require('../assets/images/banner.png')
+                  }
+                  style={styles.productImage}
+                />
+                {normalizedProduct.rating > 0 && (
+                  <View style={styles.ratingBadge}>
+                    <Icon name="star" size={12} color="#fff" />
+                    <Text style={styles.ratingText}>{normalizedProduct.rating}</Text>
+                  </View>
+                )}
               </View>
 
               <View style={styles.productDetails}>
-                <Text style={styles.productName}>{name}</Text>
-             <Text style={styles.productPrice}>₹{price * quantity}</Text>
+                <Text style={styles.productName}>{normalizedProduct.name}</Text>
+                <Text style={styles.productPrice}>
+                  ₹{normalizedProduct.price * quantity}
+                </Text>
 
                 <View style={styles.quantityContainer}>
                   <TouchableOpacity onPress={decreaseQty} style={styles.quantityButton}>
                     <Icon name="remove" size={16} color="#fff" />
                   </TouchableOpacity>
-                  <Text style={styles.quantityText}>{quantity.toString().padStart(2, '0')}</Text>
+                  <Text style={styles.quantityText}>
+                    {quantity.toString().padStart(2, '0')}
+                  </Text>
                   <TouchableOpacity onPress={increaseQty} style={styles.quantityButton}>
                     <Icon name="add" size={16} color="#fff" />
                   </TouchableOpacity>
@@ -110,10 +148,9 @@ const BuyNow = () => {
             </View>
           </View>
 
-          {/* Ingredients Section */}
           <View style={styles.ingredientsSection}>
             <Text style={styles.sectionTitle}>Ingredients:</Text>
-            {ingredients.map((item, index) => (
+            {normalizedProduct.ingredients.map((item, index) => (
               <View key={index} style={styles.ingredientRow}>
                 <Text style={styles.ingredientName}>{item.name}</Text>
                 <Text style={styles.ingredientValue}>{item.value}</Text>
@@ -121,15 +158,13 @@ const BuyNow = () => {
             ))}
           </View>
 
-          {/* Volume Section */}
           <View style={styles.volumeSection}>
             <Text style={styles.volumeText}>
-              Volume: <Text style={styles.volumeValue}>{volume}</Text>
+              Volume: <Text style={styles.volumeValue}>{normalizedProduct.volume}</Text>
             </Text>
           </View>
         </ScrollView>
 
-        {/* Fixed Bottom Area */}
         <View style={styles.fixedBottom}>
           <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
             <Text style={styles.continueText}>ADD TO CART</Text>
@@ -284,18 +319,11 @@ const styles = StyleSheet.create({
   },
   fixedBottom: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 40,
     left: 0,
     right: 0,
     backgroundColor: '#fff',
     padding: 16,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 12,
-    textAlign: 'right',
   },
   continueButton: {
     flexDirection: 'row',
@@ -319,6 +347,26 @@ const styles = StyleSheet.create({
     padding: 6,
     marginLeft: -32,
   },
+
+  cartBadge: {
+  position: 'absolute',
+  right: -8,
+  top: -5,
+  backgroundColor: '#075E4D',
+  borderRadius: 10,
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  justifyContent: 'center',
+  alignItems: 'center',
+  minWidth: 18,
+},
+cartBadgeText: {
+  color: 'white',
+  fontSize: 10,
+  fontWeight: 'bold',
+  textAlign: 'center',
+},
+
 });
 
 export default BuyNow;

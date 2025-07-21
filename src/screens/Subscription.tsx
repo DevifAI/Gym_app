@@ -18,6 +18,12 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import Toast from 'react-native-toast-message';
 import { useSubscription } from '../hooks/useSubscription';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+type RazorpaySuccessData = {
+  razorpay_payment_id: string;
+  [key: string]: any;
+};
 
 type RootStackParamList = {
   SlotBook: { title: string; id: string };
@@ -29,13 +35,14 @@ const Subscription = () => {
   const subCategoryId = route.params?.id;
 
   const { userName, phone } = useSelector((state: RootState) => state.auth);
-  const { getPackages, packages, message } = useSubscription();
+  const { getPackages, packages, message, buySubscriptionByMemberId ,subscriptionPaymentByMemberId } = useSubscription();
   const { pay } = usePayment();
 
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
   const [expandedPackageId, setExpandedPackageId] = useState<number | null>(null);
   const [loadingButton, setLoadingButton] = useState<boolean>(false);
   const [loadingPackages, setLoadingPackages] = useState<boolean>(false);
+  const [cartId, setCartId] = useState<string | null>(null);
 
   useEffect(() => {
     if (subCategoryId) {
@@ -44,51 +51,122 @@ const Subscription = () => {
     }
   }, [subCategoryId]);
 
-  const handlePayment = () => {
-    if (selectedPackageId === null) {
-      Alert.alert('Please select a subscription package.');
-      return;
+const handlePayment = async () => {
+  if (selectedPackageId === null) {
+    Alert.alert('Please select a subscription package.');
+    return;
+  }
+
+  const selectedPackage = packages.find(pkg => pkg.package_id === selectedPackageId);
+  if (!selectedPackage) {
+    Alert.alert('Invalid package selected.');
+    return;
+  }
+
+  const amount = parseInt(String(selectedPackage.price ?? '0'), 10);
+  setLoadingButton(true);
+
+  try {
+    console.log('Initiating subscription purchase...');
+    const result = await buySubscriptionByMemberId(
+      String(selectedPackage.package_id),
+      String(selectedPackage.price)
+    );
+
+    if (!result.success || !result.cart_id) {
+      throw new Error('Failed to initiate subscription');
     }
 
-    const selectedPackage = packages.find(pkg => pkg.package_id === selectedPackageId);
-    if (!selectedPackage) {
-      Alert.alert('Invalid package selected.');
-      return;
-    }
+    const savedCartId = String(result.cart_id);
+    setCartId(savedCartId);
+    await AsyncStorage.setItem('cart_id', savedCartId);
 
-    const amount = parseInt(String(selectedPackage?.price ?? '0'), 10);
-    if (amount === 0) {
-      navigation.navigate('PaymentSuccess', {
-        type: 'subscription',
-        message: selectedPackage.message || 'Free Trial Activated!',
-        packageId: selectedPackage.package_id,
-      });
-      return;
-    }
+    // Wrap pay call with try-catch to catch errors BEFORE Razorpay popup
+try {
+  pay({
+    amount,
+    user: {
+      name: userName || '',
+      email: 'john@example.com', // Replace with actual email
+      phone: phone || '',
+    },
+    onSuccess: async (data: RazorpaySuccessData) => {
+      try {
+        console.log('[PaymentSuccessPayload]', data);
 
-    pay({
-      amount,
-      user: {
-        name: userName || '',
-        email: 'john@example.com',
-        phone: phone || '',
-      },
-      onSuccess: () => {
+        const res = await subscriptionPaymentByMemberId({
+          cart_id: Number(savedCartId),
+          transaction_id: data.razorpay_payment_id,
+          payment_status: 'Paid',
+        });
+          console.log(res , 'paymentsucessssssss');
+        if (!res.status) {
+          throw new Error(res.message || 'Failed to record payment');
+        }
+
+        // ✅ Delete cart_id from AsyncStorage
+        await AsyncStorage.removeItem('cart_id');
+
         navigation.navigate('PaymentSuccess', {
           type: 'subscription',
           message: 'Subscription purchased successfully!',
           packageId: selectedPackage.package_id,
+          orderNo: savedCartId,
+          transactionId: data.razorpay_payment_id,
         });
-      },
-      onFailure: () => {
+      } catch (error: any) {
+        console.error('[onSuccess Error]', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error.message || 'Something went wrong after payment.',
+        });
+      } finally {
+        setLoadingButton(false);
+      }
+    },
+    onFailure: async () => {
+      try {
+        await subscriptionPaymentByMemberId({
+          cart_id: Number(savedCartId),
+          transaction_id: '',
+          payment_status: 'Cancelled',
+        });
+
+        // ✅ Delete cart_id from AsyncStorage
+        await AsyncStorage.removeItem('cart_id');
+
         Toast.show({
           type: 'error',
           text1: 'Payment Failed',
           text2: 'Please try again.',
         });
-      },
-    });
-  };
+      } catch (error: any) {
+        console.error('[onFailure Error]', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error.message || 'Something went wrong while updating failed payment.',
+        });
+      } finally {
+        setLoadingButton(false);
+      }
+    },
+  });
+} catch (err) {
+  console.error('Razorpay Error:', err);
+  Alert.alert('Payment Error', 'Razorpay failed to open. Please try again.');
+  setLoadingButton(false);
+}
+
+  } catch (error) {
+    console.error('Payment Error:', error);
+    Alert.alert('Error', 'Something went wrong during the payment process.');
+    setLoadingButton(false); // <-- Ensure it's reset
+  }
+};
+
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -102,7 +180,7 @@ const Subscription = () => {
           <View style={{ width: 24 }} />
         </View>
 
-        {/* Loading Indicator */}
+        {/* Loading or Package List */}
         {loadingPackages ? (
           <ActivityIndicator size="large" color="#075E4D" style={{ marginTop: 50 }} />
         ) : packages.length === 0 ? (
@@ -298,7 +376,7 @@ const styles = StyleSheet.create({
   },
   fixedBottom: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 40,
     left: 0,
     right: 0,
     backgroundColor: '#fff',
@@ -325,6 +403,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 50,
     padding: 6,
+    
     marginLeft: -32,
   },
 });

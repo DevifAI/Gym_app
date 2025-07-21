@@ -1,5 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+interface Address {
+  address: string;
+  location: string;
+  country: string;
+  state: string;
+  city: string;
+  pin: string;
+}
+
 interface AuthState {
   isAuthenticated: boolean;
   userId: number | null;
@@ -11,7 +20,8 @@ interface AuthState {
   regNo?: string | null;
   token?: string | null;
   userName?: string | null;
-  image?: string | null
+  image?: string | null;
+  address?: Address;
 }
 
 const initialState: AuthState = {
@@ -25,7 +35,15 @@ const initialState: AuthState = {
   regNo: null,
   token: null,
   userName: null,
-  image:null,
+  image: null,
+  address: {
+    address: '',
+    location: '',
+    country: '',
+    state: '',
+    city: '',
+    pin: '',
+  },
 };
 
 const authSlice = createSlice({
@@ -45,7 +63,13 @@ const authSlice = createSlice({
           created_at: string;
           reg_key: string;
           reg_no: string;
-          image:  string | null;
+          image: string | null;
+          address: string;
+          location: string;
+          country: string;
+          state: string;
+          city: string;
+          pin: string;
         };
       }>
     ) {
@@ -61,6 +85,14 @@ const authSlice = createSlice({
       state.regKey = member.reg_key;
       state.regNo = member.reg_no;
       state.image = member.image;
+      state.address = {
+        address: member.address,
+        location: member.location,
+        country: member.country,
+        state: member.state,
+        city: member.city,
+        pin: member.pin,
+      };
     },
 
     logout(state) {
@@ -74,11 +106,23 @@ const authSlice = createSlice({
       state.createdAt = null;
       state.regKey = null;
       state.regNo = null;
-      state.image = null
+      state.image = null;
+      state.address = {
+        address: '',
+        location: '',
+        country: '',
+        state: '',
+        city: '',
+        pin: '',
+      };
+    },
+
+    updateAddress(state, action: PayloadAction<Address>) {
+      state.address = action.payload;
     },
   },
 });
 
-export const { login, logout } = authSlice.actions;
+export const { login, logout, updateAddress } = authSlice.actions;
 
 export default authSlice.reducer;

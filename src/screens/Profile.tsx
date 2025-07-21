@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,24 +9,89 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { RootState } from '../redux/store';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
+import { logout, updateAddress } from '../redux/slices/authSlice';
+import AddAddressModal from '../components/AddAddressModal';
+import { useProfile } from '../hooks/useProfile';
+import Toast from 'react-native-toast-message';
 
-// Define your navigation stack types
 type RootStackParamList = {
   PaymentHistory: undefined;
   ViewSubscription: undefined;
   GymInfo: undefined;
   ContactUs: undefined;
-  // Add other screens if needed
+  Login: undefined;
 };
 
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { userName, image } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+const { updateUserAddress } = useProfile();
+
+  const { userName, image, address ,userId } = useSelector((state: RootState) => state.auth);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [addressData, setAddressData] = useState({
+    address: address?.address || '',
+    location: address?.location || '',
+    country: address?.country || '',
+    state: address?.state || '',
+    city: address?.city || '',
+    pin: address?.pin || '',
+  });
+
+  const hasAddress = address && Object.values(address).some((val) => val?.trim() !== '');
+
+  const handleChange = (field: string, value: string) => {
+    setAddressData((prev) => ({ ...prev, [field]: value }));
+  };
+
+const handleSave = async (data: typeof addressData) => {
+  const payload = {
+    member_id: userId ?? '', // Ensure member_id is never null
+    address: data.address,
+    location: data.location,
+    country: data.country,
+    state: data.state,
+    city: data.city,
+    pincode: data.pin,
+  };
+
+  const result : any = await updateUserAddress(payload);
+  console.log("resutttttttttttt" , result)
+  if (result.success) {
+    setAddressData(data);
+    setModalVisible(false);
+  //  dispatch(updateAddress(data));
+    Toast.show({
+      type: 'success',
+      text1: 'Address updated',
+      text2: 'Your address was updated successfully',
+      position: 'bottom',
+    });
+  } else {
+    Toast.show({
+      type: 'error',
+      text1: 'Update failed',
+      text2: result.message || 'Could not update address',
+      position: 'bottom',
+    });
+  }
+};
+
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
 
   const avatarUrl = image || 'https://randomuser.me/api/portraits/men/1.jpg';
   const user = userName || 'Guest User';
@@ -34,13 +99,33 @@ const ProfileScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
-
       <ScrollView contentContainerStyle={styles.container}>
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <Image source={{ uri: avatarUrl }} style={styles.avatar} />
           <View style={styles.nameSection}>
             <Text style={styles.name}>{user}</Text>
+
+            {hasAddress ? (
+              <View style={styles.addressLineSection}>
+                <Text style={styles.addressLine}>
+                  {address?.address}, {address?.city}, {address?.state}
+                </Text>
+                <Text style={styles.addressLine}>
+                  {address?.country} - {address?.pin}
+                </Text>
+
+                {/* <TouchableOpacity style={styles.editButton} onPress={() => setModalVisible(true)}>
+                  <MaterialIcons name="edit" size={18} color="#fff" />
+                  <Text style={styles.editButtonText}>Edit Address</Text>
+                </TouchableOpacity> */}
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+                <MaterialIcons name="add-location-alt" size={20} color="#fff" />
+                <Text style={styles.addButtonText}>Add Address</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -51,12 +136,19 @@ const ProfileScreen = () => {
           <MenuItem icon="history" label="Payment History" onPress={() => navigation.navigate('PaymentHistory')} />
           <MenuItem icon="phone" label="Contact Us" onPress={() => navigation.navigate('ContactUs')} />
 
-          {/* Logout */}
-          <TouchableOpacity style={styles.logoutButton} onPress={() => console.log('Logout pressed')}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Icon name="logout" size={20} color="red" style={{ marginRight: 8 }} />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
+
+        <AddAddressModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSave={handleSave}
+          values={addressData}
+          onChange={handleChange}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -80,7 +172,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 20,
+    paddingTop:35,
   },
   container: {
     padding: 20,
@@ -89,7 +181,7 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
   avatar: {
@@ -106,6 +198,46 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
+  },
+  addressLineSection: {
+    marginTop: 8,
+  },
+  addressLine: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 2,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#075E4D',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#075E4D',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
   },
   card: {
     backgroundColor: '#f5f5f5',

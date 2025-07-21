@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,8 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Input from '../components/Input';
 import { useNavigation } from '@react-navigation/native';
-import { useLogin } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth';
+import changeNavigationBarColor from 'react-native-navigation-bar-color';
 
 const { width } = Dimensions.get('window');
 
@@ -25,7 +26,11 @@ const Login = () => {
   const [hidePassword, setHidePassword] = useState(true);
   const navigation = useNavigation<any>();
 
-   const { loginUser, loading } = useLogin(); 
+       useEffect(() => {
+      changeNavigationBarColor('#ffffff', true); // White nav bar with dark icons
+    }, []);
+
+  const { loginUser, loading } = useAuth();
 
   const validate = () => {
     const phoneRegex = /^\d{10}$/;
@@ -38,9 +43,9 @@ const Login = () => {
 
   const handleSignIn = async () => {
     if (validate()) {
-      const result = await loginUser({ phone, password }); // ✅ call login API
+      const result = await loginUser({ phone, password });
       if (result.success) {
-        navigation.navigate('MainTabs'); // ✅ navigate only if login succeeds
+        navigation.navigate('MainTabs');
       } else {
         Alert.alert('Login Failed', (result as any).message || 'Invalid credentials');
       }
@@ -68,20 +73,18 @@ const Login = () => {
             resizeMode="contain"
           />
 
-         <Input
-  label="Phone Number"
-  value={phone}
-  onChangeText={(text) => {
-    // Allow only digits and max length of 10
-    const cleaned = text.replace(/[^0-9]/g, '');
-    if (cleaned.length <= 10) {
-      setPhone(cleaned);
-    }
-  }}
-  keyboardType="phone-pad"
-  autoCapitalize="none"
-/>
-
+          <Input
+            label="Phone Number"
+            value={phone}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/[^0-9]/g, '');
+              if (cleaned.length <= 10) {
+                setPhone(cleaned);
+              }
+            }}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+          />
 
           <Input
             label="Password"
@@ -109,6 +112,16 @@ const Login = () => {
               <MaterialCommunityIcons name="arrow-top-right" size={20} color="#084c3a" />
             </View>
           </TouchableOpacity>
+
+          {/* 👇 Register Link */}
+          <View style={styles.registerContainer}>
+            <Text style={styles.registerText}>
+              Don’t have an account?{' '}
+              <Text style={styles.registerLink} onPress={() => navigation.navigate('Register')}>
+                Register
+              </Text>
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -175,5 +188,17 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     padding: 6,
     marginLeft: -32,
+  },
+  registerContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  registerText: {
+    fontSize: 16,
+    color: '#000',
+  },
+  registerLink: {
+    color: '#007bff',
+    fontWeight: 'bold',
   },
 });

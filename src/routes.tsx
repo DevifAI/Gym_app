@@ -23,6 +23,7 @@ import Amenities from './screens/Amenities';
 import CartScreen from './screens/Cart';
 import ActivitiesScreen from './screens/Activities';
 import PaymentHistoryScreen from './screens/PaymentHistory';
+import Register from './screens/Register';
 // import HomeScreen from './screens/HomeScreen';
 
 const Stack = createNativeStackNavigator();
@@ -44,6 +45,7 @@ const Routes = () => {
       <Stack.Navigator initialRouteName="MainTabs" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Register" component={Register} />
          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
          <Stack.Screen name="OtpVerify" component={OtpVerification} />
          <Stack.Screen name="CreateNewPassword" component={CreateNewPassword} />
